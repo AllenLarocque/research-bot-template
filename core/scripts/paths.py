@@ -13,12 +13,26 @@ than silently verify quotes against nothing.
 """
 import os
 
-DOSSIERS = (os.environ.get("RESEARCH_DOSSIERS")
-            or os.environ.get("FORESTWIKI_DOSSIERS")
-            or "/dossiers")
-SCRATCH = (os.environ.get("RESEARCH_SCRATCH")
-           or os.environ.get("FORESTWIKI_SCRATCH")
-           or "/tmp/research")
+
+def _env(new, old, default):
+    """First of the two names actually PRESENT wins, even if set to "".
+
+    Presence, not truthiness: the original used os.environ.get(NAME, default),
+    which honours an explicitly-empty value. An `or` chain silently turns "" into
+    the default, which is a behaviour change.
+    """
+    if new in os.environ:
+        return os.environ[new]
+    if old in os.environ:
+        return os.environ[old]
+    return default
+
+
+DOSSIERS = _env("RESEARCH_DOSSIERS", "FORESTWIKI_DOSSIERS", "/dossiers")
+SCRATCH = _env("RESEARCH_SCRATCH", "FORESTWIKI_SCRATCH", "/tmp/research")
+# CACHE keeps truthiness (or-chain) semantics on purpose: the original already
+# used os.environ.get(...) or ... here, so "" falling through to the derived
+# path is the PRESERVED behaviour, not a regression.
 CACHE = (os.environ.get("RESEARCH_SRC_CACHE")
          or os.environ.get("FORESTWIKI_SRC_CACHE")
          or os.path.join(SCRATCH, "srccache"))
