@@ -9,11 +9,10 @@ usage: findquote.py "<anchor or phrase>" [more terms ...]
        findquote.py --source "<Source page title>" "<anchor>"
 """
 import sys
-import os
 import re
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import retro
+from core.scripts.srccache import load_manifest, source_text
+from core.scripts.textutil import split_sentences
 
 
 def main():
@@ -25,15 +24,15 @@ def main():
         print(__doc__)
         return
     terms = [a.lower() for a in args]
-    man = retro.load_manifest()
+    man = load_manifest()
     titles = [only] if only else sorted(man)
     hits = 0
     for title in titles:
-        body = retro.source_text(title)
+        body = source_text(title)
         if not body:
             continue
         flat = re.sub(r"\s+", " ", body)
-        for a, b in retro.split_sentences(flat):
+        for a, b in split_sentences(flat):
             s = flat[a:b].strip()
             if not (25 < len(s) < 420):
                 continue

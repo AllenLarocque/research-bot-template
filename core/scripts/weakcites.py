@@ -11,12 +11,12 @@ quote string before calling these functions -- this module knows nothing about
 where the sentence or quote text came from.
 """
 import re
-import unicodedata
 
-STOP = set("""a an the and or but of in on at to for from by with as is was were be been being
-it its this that these those which who whom whose has have had will would can could may might
-not no than then there their they them he she his her him we our us you your i also more most
-other such into over under between during after before while""".split())
+# words() used to be a byte-identical copy of retro.words(), duplicated here
+# because no shared core/ module existed yet when this file was split out.
+# core.scripts.textutil is that shared home now, so this imports it instead
+# of carrying its own copy (and its own STOP set) forward.
+from core.scripts.textutil import words
 
 # Read from sys.argv at module scope in the original script, which made the
 # module impossible to import from a test. Now a plain default: callers that
@@ -30,14 +30,6 @@ def anchors(s):
     for m in re.finditer(r"\b([A-Z][a-zA-Z&.\-']+(?: [A-Z][a-zA-Z&.\-']+)+)", s):
         out.add(m.group(1).lower())
     return out
-
-
-def words(s):
-    """Content words: lowercased, stopwords and length-<=2 tokens dropped."""
-    s = unicodedata.normalize("NFKD", s)
-    for a, b in (("’", "'"), ("“", '"'), ("”", '"'), ("—", " "), ("–", " ")):
-        s = s.replace(a, b)
-    return [w for w in re.findall(r"[a-z0-9]+", s.lower()) if w not in STOP and len(w) > 2]
 
 
 def overlap(sentence, quote):
