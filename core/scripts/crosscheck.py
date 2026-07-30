@@ -19,9 +19,9 @@ Two suppression rules keep this useful instead of pure noise:
 
   * a noun for a thing the subject OWNS, standing between the name and the
     year, means the date belongs to that thing, not to the subject itself
-    ("MacMillan Bloedel's sawmill ... closed in 1983"). What counts as an
-    "owned thing" is domain vocabulary, not something this module knows --
-    callers pass it in as `owned_things`;
+    ("Acme's depot ... closed in 1983"). What counts as an "owned thing" is
+    domain vocabulary, not something this module knows -- callers pass it in
+    as `owned_things`;
   * a pronoun between the name and the year means the sentence has moved on
     to a different subject ("opened it in 1912", "It was formed in 2008").
 """

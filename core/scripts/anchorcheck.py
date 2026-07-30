@@ -68,9 +68,9 @@ def name_present(name, haystack):
     A source almost never repeats a name the way an encyclopedia sentence does.
     Three equivalences keep the check honest without crying wolf:
       * the full string ("alex macdonald");
-      * an acronym of its initials ("iwa" for "international woodworkers of
-        america"), which is how unions and companies are actually written;
-      * the last substantial word ("bennett" for "premier w.a.c. bennett"),
+      * an acronym of its initials ("afw" for "amalgamated federation of
+        workers"), which is how unions and companies are actually written;
+      * the last substantial word ("smith" for "premier jane q. smith"),
         because a surname or a distinctive final word carries the identity.
     """
     fn = flat(name)
