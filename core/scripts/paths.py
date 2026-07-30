@@ -38,6 +38,6 @@ CACHE = (os.environ.get("RESEARCH_SRC_CACHE")
          or os.path.join(SCRATCH, "srccache"))
 
 
-def ledger(entity):
+def ledger_path(entity):
     """Path to an entity's claim ledger."""
     return os.path.join(DOSSIERS, entity.replace(" ", "_"), "sources.md")

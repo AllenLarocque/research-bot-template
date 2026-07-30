@@ -25,11 +25,18 @@ marked; "done" is earned, not asserted.
 Do not reorder. In particular: **the ledger precedes the prose.** Writing prose
 first and back-filling a ledger is how invented quotes get in.
 
-Each sub-skill is a `SKILL.md` in the correspondingly-named subdirectory of this
-skill. If your harness does not surface them as separately invocable skills,
-**read the file directly** at the start of that stage — e.g.
-`source-vetting/SKILL.md` before stage 2. Do not run a stage from memory of what
-the sub-skill says.
+`source-vetting` and `claim-ledger` are format-neutral and live as
+`SKILL.md` in the correspondingly-named subdirectory of this skill
+(`source-vetting/SKILL.md`, `claim-ledger/SKILL.md`).
+
+`attribution`, `verification` and `publishing` are **MediaWiki-specific** —
+they assume a wikitext target and a MediaWiki publishing surface — and live
+under the adapter, not here: `adapters/mediawiki/attribution/SKILL.md`,
+`adapters/mediawiki/verification/SKILL.md`,
+`adapters/mediawiki/publishing/SKILL.md`. If your harness does not surface
+sub-skills as separately invocable, **read the file directly** at the start of
+that stage using the paths above. Do not run a stage from memory of what the
+sub-skill says.
 
 ## The self-critique / anti-overclaim gate
 

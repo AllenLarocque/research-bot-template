@@ -25,47 +25,18 @@ Notes:
 - Use `n.d.` when a web page carries no publication date — never invent one.
 - Wikipedia is tier T3: cite it in APA like any web page, but it may only
   corroborate, never solely carry an `ai-verified` claim (see `source-vetting`).
+- Titles are italicized per whatever the target output format uses for
+  emphasis (wiki markup, Markdown, etc.) — this reference does not prescribe
+  a specific markup syntax, only the APA shape.
+- **Titles that already end in a period** (e.g. `Kruger Inc.`) can produce a
+  double period (`Kruger Inc.. (2026)`) if the year parenthetical is appended
+  naively — de-duplicate the repeated period.
+- Watch for two Source pages covering the same underlying document (e.g. an
+  "About Us" page that reproduces an "Our History" page verbatim): note the
+  overlap on both pages and never count them as two independent corroborating
+  sources.
 
----
-
-## Conversion completed (2026-07-28)
-
-All **116 Source pages are now APA-formatted**. The corpus previously used a house style
-(`"Title". ''Publication'', date. Accessed …`); it was converted mechanically by
-`scratchpad/apaconv.py`, which pattern-matches the nine shapes that actually occurred and
-refuses anything it cannot parse confidently. Sixty converted automatically; four were done by
-hand (a multi-author CBC piece, an Encyclopedia.com company history, a UNBC subject guide, and
-a Weyerhaeuser press release).
-
-### Two formatting rules learned the hard way
-1. **Italics must be wikitext `''…''`, never markdown `*…*`.** Forty-three Source pages created
-   during this project used asterisks, which the wiki renders literally — the citations
-   displayed `*Title*` instead of italics. All fixed.
-2. **Titles that already end in a period** (e.g. `Kruger Inc.`) produce `Kruger Inc.. (2026)`
-   unless de-duplicated. The converter collapses repeated periods.
-
-### Independence warning recorded on the pages themselves
-Two Source pages covered the same document (`West Fraser — About Us` contains
-`West Fraser — Our History`). Both now carry an explicit note that they are NOT independent and
-must never be counted as two corroborating sources. Check for this before adding a Source page
-whose URL is a superset of an existing one.
-
-## Acceptance check — existing Source pages vs. these formats (2026-07-27)
-
-**Superseded by the 2026-07-28 conversion above — all four have since been reformatted.**
-Retained as the original worked examples of what the house style looked like and how each
-maps to APA.
-
-Checked four live Source pages. All four predated this reference and used a
-short house style rather than APA.
-
-| Source page | Current `citation` (verbatim, fetched 2026-07-27) | Verdict |
-|---|---|---|
-| `HR A Biography of H.R. MacMillan` | `Drushka, Ken (1995). ''HR: A Biography of H.R. MacMillan''. Madeira Park, BC: Harbour Publishing. ISBN 1-55017-129-0.` | **Close, not APA.** Given name should be an initial; APA drops the place of publication. APA: `Drushka, K. (1995). ''HR: A Biography of H.R. MacMillan''. Harbour Publishing. ISBN 1-55017-129-0.` |
-| `Wikipedia — Julius Bloedel` | `"Julius Bloedel". ''Wikipedia''. Accessed 18 July 2026.` | **Not APA.** APA: `Julius Bloedel. (2026). In ''Wikipedia''. Retrieved July 18, 2026, from https://en.wikipedia.org/wiki/Julius_Bloedel` |
-| `SEC Form 8-K-A — Weyerhaeuser acquisition of MacMillan Bloedel` | `Weyerhaeuser Company (2000). Form 8-K/A, "Completion of acquisition of MacMillan Bloedel Limited" (event 1 November 1999). U.S. Securities and Exchange Commission, EDGAR (CIK 0000106535).` | **Close, not APA.** Needs a period after the author, the year in parentheses as its own sentence, and the form title in italics. APA: `Weyerhaeuser Company. (2000). ''Form 8-K/A: Completion of acquisition of MacMillan Bloedel Limited'' (CIK 0000106535). U.S. Securities and Exchange Commission.` |
-| `Kamloops This Week — Domtar Pulp Mill 50 Years 2015` | `"Domtar celebrates pulp mill's 50 years in Kamloops". ''Kamloops This Week'', 5 December 2015.` | **Not APA.** No author credited on the piece, so the headline moves to the author slot. APA: `Domtar celebrates pulp mill's 50 years in Kamloops. (2015, December 5). ''Kamloops This Week''. https://…` |
-
-Conclusion: the existing corpus is internally consistent but not APA. Converting
-all 73 Source pages is a separate maintenance pass, not part of the skill build;
-new and touched Source pages must use APA from now on.
+The history of converting this project's corpus to APA, and the
+format-specific rendering rule that conversion surfaced, are recorded in
+`adapters/mediawiki/attribution/SKILL.md` (that history is tied to how one
+specific wiki renders emphasis, not to the citation shapes above).
