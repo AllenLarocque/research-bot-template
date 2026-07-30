@@ -1,0 +1,124 @@
+---
+name: forestwiki-research
+description: Use when researching, drafting, or publishing any entity page (organization, facility, place, person, event) — routes through source-vetting, claim-ledger, attribution, verification and publishing, and enforces the self-critique gate before any completion claim.
+---
+
+# forestwiki-research
+
+Produce **credible, fully-attributed, hallucination-resistant** entity pages.
+Every checkable on-page fact traces to a cited source; inference is visibly
+marked; "done" is earned, not asserted.
+
+## Pipeline — run in this order, per entity
+
+| Stage | Sub-skill | Output |
+|---|---|---|
+| 1. Research | — | candidate sources, read not skimmed |
+| 2. Vet sources | `source-vetting` | tier + independence per source |
+| 3. Build the ledger | `claim-ledger` | 8-column table in `/dossiers/<Entity>/sources.md` |
+| 4. Draft the page | `attribution` | prose with inline citations and inference markers |
+| 5. Verify | `verification` | the verifier prints `VERIFY PASS` |
+| 6. Publish | `publishing` | page live, tagged `ai-contributed` |
+| 7. Post-publish | `verification` | purge, re-render, confirm edges knit |
+| 8. Self-critique | this skill | the gate below, before any completion claim |
+
+Do not reorder. In particular: **the ledger precedes the prose.** Writing prose
+first and back-filling a ledger is how invented quotes get in.
+
+Each sub-skill is a `SKILL.md` in the correspondingly-named subdirectory of this
+skill. If your harness does not surface them as separately invocable skills,
+**read the file directly** at the start of that stage — e.g.
+`source-vetting/SKILL.md` before stage 2. Do not run a stage from memory of what
+the sub-skill says.
+
+## The self-critique / anti-overclaim gate
+
+Before writing any sentence containing *done, complete, exhaustive,
+comprehensive, covered, finished,* or a similar claim, produce an explicit list:
+
+- **(a)** every claim that is `unverified`, single-sourced, or `inference`;
+- **(b)** every unresolved item, and every contradiction with the brief or with
+  data already on the wiki;
+- **(c)** what may be missing or is not yet covered.
+
+**The words "exhaustive" and "complete" are forbidden unless that list is empty
+and the emptiness is justified.** If the list is non-empty, say what is
+outstanding in the same breath as what is finished.
+
+This exists because of a specific failure on this project: coverage was declared
+"essentially exhaustive" when only the coastal MacMillan-Bloedel/WFP ownership
+web had been saturated — West Fraser, Interfor, Skeena, the Cariboo, the
+Kootenays, the north coast and all labour history were untouched. Saturating the
+part you can see is not coverage.
+
+## Definition of done (per entity)
+
+- [ ] Page live, AI-contributed banner in place, every edit tagged `ai-contributed`
+- [ ] the verifier prints **VERIFY PASS** for the entity
+- [ ] Sources section renders; every footnote resolves to a Source page
+- [ ] Every checkable fact is cited or carries an inference marker
+- [ ] Every relationship row cited; `ai-verified` only with 2+ independent T1/T2
+- [ ] Source pages exist for all citations, with APA `citation` + `archive_url`
+      (or an explicit on-page note if no valid snapshot exists)
+- [ ] Dossier complete: ledger + `snapshots/` + a line in `/dossiers/_runs.md`
+- [ ] Re-fetched the rendered page; no template/Cargo errors; incoming edges knit
+- [ ] Self-critique gate cleared
+
+## Worked example — `Kamloops pulp mill` traced through the pipeline
+
+Checked against the live page, 2026-07-27:
+
+| Stage | State |
+|---|---|
+| 1–2 Research + vetting | 3 sources cited (Kamloops This Week T2; Radio NL T2; Kruger corporate T3). KTW + Radio NL are independent → `ai-verified` defensible. |
+| 3 Ledger | ❌ `sources.md` is the old free-form table, not the 8-column ledger. |
+| 4 Attribution | ❌ no inline citations — the page predates the citation model. |
+| 5 Verify | ❌ `VERIFY FAIL` (no citations; no ledger rows). |
+| 6 Publish | ✅ shape, banner, tags, comma-free source titles all correct. |
+| 7 Post-publish | ✅ renders clean; Relationships + Timeline present; edges knit. |
+| 8 Self-critique | The honest statement: *"the operational layer is complete; the attribution layer is not, and this page would not pass verification today."* |
+
+Every stage maps to a sub-skill and every done-item is checkable. The example is
+deliberately a page that **fails** — it shows the gate working rather than a
+page chosen to look good.
+
+## Retrofit backlog — closed 2026-07-28
+
+The ~89 pages drafted before this skill set have been retrofitted. As of
+2026-07-28 the whole corpus passes both `verify_entity` and `check_render`.
+Standing state is recorded in `/dossiers/_runs.md`; the reasoning behind each
+correction is in `/dossiers/_journey.md`.
+
+## The failure mode that survives every mechanical check
+
+A citation can be **verbatim, resolvable, ledgered — and not evidence for the
+sentence it is attached to.** Three instances were found on 2026-07-28 alone:
+
+- `TFL 44` placed the licence "within the territories of the Tseshaht First
+  Nation and Hupacasath First Nation", cited to a quote naming neither.
+- `Cascadia Forest Products` dated its acquisition by Western to 1 May 2006,
+  cited to a Weyerhaeuser release about a 2005 timberland sale.
+- `Sam Ketcham` had him moving to Williams Lake in 1959, cited to a quote about
+  a mill built at Quesnel in 1970.
+
+`scripts/anchorcheck.py` exists for this. Run it — with `weakcites.py` — before
+declaring a batch done, and read what it surfaces. Roughly one flag in three has
+been a real error; the rest were facts the sources carried that nobody had cited.
+
+Two habits fall out of that experience:
+
+- **The lead sentence is the highest-risk sentence on any page.** It summarises
+  the article and collects one citation that covers a fraction of what it says.
+- **Dates and superlatives are where unsourced text hides.** "renamed in 1989",
+  "the second-largest forest company in the province", "control passed to X in
+  2006", "incorporated on 6 May" — every one of those was written by an earlier
+  pass of this pipeline and none had a source.
+
+## When sources disagree, say so on the page
+
+Never silently pick. The corpus now carries date and figure conflicts stated in
+the open — TFL 44's area (137,330 / 140,000 / 232,000 ha), the Fletcher
+Challenge purchase of BCFP (1987 / 1988), Tahsis's incorporation (1970 / 1972),
+the Sommers verdict (five charges / six offences), whether the 1967 Interior
+strike won wage parity. A reader who can see the disagreement is better served
+than one given false precision.
