@@ -46,19 +46,19 @@ Framing may not introduce a new fact. If it does, it is checkable.
 
 ## Worked example
 
-Three facts about a mill, and what each produces on-page:
+Three facts about a rail plant, and what each produces on-page:
 
 | id | claim | quote | source page | url | tier | status | confidence |
 |----|-------|-------|-------------|-----|------|--------|------------|
-| 1 | Mill produced first pulp 30 Nov 1965 | "the mill produced its first pulp on November 30, 1965" | Kamloops This Week — Domtar Pulp Mill 50 Years 2015 | https://… | T2 | sourced | high |
-| 2 | Mill and the sawmill shared a log supply | — | — | — | — | inference | low |
-| 3 | Mill's original construction cost | — | — | — | — | unknown | — |
+| 1 | Plant produced first locomotive 30 Nov 1965 | "the plant produced its first locomotive on November 30, 1965" | Fairview Gazette — Meridian-Highline Rail Plant 50 Years 2015 | https://… | T2 | sourced | high |
+| 2 | Plant and the adjacent foundry shared a parts supply | — | — | — | — | inference | low |
+| 3 | Plant's original construction cost | — | — | — | — | unknown | — |
 
 On-page treatment:
-1. `The mill produced its first pulp on 30 November 1965` — followed by an
-   inline citation naming the source page, with the verbatim quote "the mill
-   produced its first pulp on November 30, 1965" attached.
-2. `The mill likely drew residuals from the neighbouring sawmill` — followed by
+1. `The plant produced its first locomotive on 30 November 1965` — followed by an
+   inline citation naming the source page, with the verbatim quote "the plant
+   produced its first locomotive on November 30, 1965" attached.
+2. `The plant likely drew parts from the neighbouring foundry` — followed by
    an inference marker noting "both were operating on adjacent sites from 1965".
 3. **Nothing.** The construction cost does not appear on the page in any form.
    It stays in the ledger as a gap for a human or a later pass to fill.

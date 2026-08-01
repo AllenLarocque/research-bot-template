@@ -71,13 +71,13 @@ Saturating the part you can see is not coverage.
 - [ ] Re-fetched the rendered page; no template/Cargo errors; incoming edges knit
 - [ ] Self-critique gate cleared
 
-## Worked example — `Kamloops pulp mill` traced through the pipeline
+## Worked example — `Fairview rail plant` traced through the pipeline
 
 Checked against the live page, 2026-07-27:
 
 | Stage | State |
 |---|---|
-| 1–2 Research + vetting | 3 sources cited (Kamloops This Week T2; Radio NL T2; Kruger corporate T3). KTW + Radio NL are independent → `ai-verified` defensible. |
+| 1–2 Research + vetting | 3 sources cited (Fairview Gazette T2; Radio Fairview T2; Ashford Rail corporate T3). FG + Radio Fairview are independent → `ai-verified` defensible. |
 | 3 Ledger | ❌ `sources.md` is the old free-form table, not the 8-column ledger. |
 | 4 Attribution | ❌ no inline citations — the page predates the citation model. |
 | 5 Verify | ❌ `VERIFY FAIL` (no citations; no ledger rows). |
@@ -101,8 +101,8 @@ correction is in `/dossiers/_journey.md`.
 A citation can be **verbatim, resolvable, ledgered — and not evidence for the
 sentence it is attached to.** Three instances were found on 2026-07-28 alone:
 
-- `TFL 44` placed the licence "within the territories of the Tseshaht First
-  Nation and Hupacasath First Nation", cited to a quote naming neither.
+- `Right-of-Way 44` placed the corridor "within the townships of Ashford and
+  Bellweather", cited to a quote naming neither.
 - `Example Manufacturing Company` dated its acquisition by Acme Corporation to
   1 May 2006, cited to a Consolidated Industries release about a 2005 real-estate sale.
 - `Sam Ketcham` had him moving to Williams Lake in 1959, cited to a quote about
@@ -124,8 +124,8 @@ Two habits fall out of that experience:
 ## When sources disagree, say so on the page
 
 Never silently pick. The corpus now carries date and figure conflicts stated in
-the open — TFL 44's area (137,330 / 140,000 / 232,000 ha), the Fletcher
-Challenge purchase of BCFP (1987 / 1988), Tahsis's incorporation (1970 / 1972),
-the Sommers verdict (five charges / six offences), whether the 1967 Interior
-strike won wage parity. A reader who can see the disagreement is better served
-than one given false precision.
+the open — Right-of-Way 44's land grant (137,330 / 140,000 / 232,000 ha),
+Meridian-Highline's acquisition of Continental (1987 / 1988), Bellweather's
+incorporation (1970 / 1972), the Ashford inquiry verdict (five charges / six
+offences), whether the 1967 system-wide strike won wage parity. A reader who
+can see the disagreement is better served than one given false precision.

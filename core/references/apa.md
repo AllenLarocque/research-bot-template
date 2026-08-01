@@ -9,9 +9,9 @@ to the Source page rather than repeating it.
 - **Encyclopedia entry:** Author/Editor. (Year). Entry title. In *Encyclopedia name*. Publisher.
   e.g., Francis, D. (Ed.). (2000). Example Manufacturing Company. In *Encyclopedia of American Business*. Britannica Publishing.
 - **News article:** Author, A. (Year, Month Day). Headline. *Publication*. URL
-  e.g., Rothenburger, M. (2015, December 5). Domtar celebrates pulp mill's 50 years in Kamloops. *Kamloops This Week*. https://…
+  e.g., Rothenburger, M. (2015, December 5). Meridian-Highline celebrates rail plant's 50 years in Fairview. *Fairview Gazette*. https://…
 - **Web page / corporate site:** Organization. (Year). *Page title*. Site. URL
-  e.g., West Fraser Timber Co. Ltd. (n.d.). *Our history*. West Fraser. https://…
+  e.g., Continental Rail Co. Ltd. (n.d.). *Our history*. Continental Rail. https://…
 - **Regulatory filing:** Company. (Year). *Form type: description* (Identifier). Regulator. URL
   e.g., Acme Corporation. (2000). *Form 8-K/A: Acquisition of Example Industries Limited* (CIK 0000000000). U.S. Securities and Exchange Commission. https://…
 - **Archival fonds:** *Fonds/record title* (dates). Repository. URL
@@ -28,9 +28,9 @@ Notes:
 - Titles are italicized per whatever the target output format uses for
   emphasis (wiki markup, Markdown, etc.) — this reference does not prescribe
   a specific markup syntax, only the APA shape.
-- **Titles that already end in a period** (e.g. `Kruger Inc.`) can produce a
-  double period (`Kruger Inc.. (2026)`) if the year parenthetical is appended
-  naively — de-duplicate the repeated period.
+- **Titles that already end in a period** (e.g. `Ashford Rail Corp.`) can
+  produce a double period (`Ashford Rail Corp.. (2026)`) if the year
+  parenthetical is appended naively — de-duplicate the repeated period.
 - Watch for two Source pages covering the same underlying document (e.g. an
   "About Us" page that reproduces an "Our History" page verbatim): note the
   overlap on both pages and never count them as two independent corroborating
