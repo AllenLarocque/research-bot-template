@@ -14,7 +14,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.mutate import (MutationError, fabricate_quote, load_corpus,
-                                  paraphrase_quote, swap_citation)
+                                  paraphrase_quote, shift_date, swap_citation)
 from research_core.quoteaudit import audit
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -135,6 +135,42 @@ class TestSwapCitation(MutateCase):
         a = swap_citation(self.root, "Ashford_Rail_Corp", "1", "Fairview_Works")
         load_corpus(FIXTURES, self.root)
         b = swap_citation(self.root, "Ashford_Rail_Corp", "1", "Fairview_Works")
+        self.assertEqual(a, b)
+
+
+class TestShiftDate(MutateCase):
+    def test_claim_year_no_longer_matches_the_quote(self):
+        old, new = shift_date(self.root, "Ashford_Rail_Corp", "1")
+        led = self.ledger("Ashford_Rail_Corp")
+        row = [l for l in led.splitlines() if l.strip().startswith("| 1 |")][0]
+        claim, quote = row.split("|")[2], row.split("|")[3]
+        self.assertIn(new, claim)
+        self.assertIn(old, quote)
+        self.assertNotIn(new, quote)
+
+    def test_shift_is_large_enough_to_be_a_real_conflict(self):
+        old, new = shift_date(self.root, "Ashford_Rail_Corp", "1")
+        self.assertGreaterEqual(abs(int(new) - int(old)), 10)
+
+    def test_raises_on_an_unknown_entity(self):
+        with self.assertRaises(MutationError):
+            shift_date(self.root, "No_Such_Entity", "1")
+
+    def test_raises_when_the_claim_carries_no_year(self):
+        # Give a row a year-free claim, then assert the guard fires rather
+        # than the operator silently doing nothing.
+        path = os.path.join(self.root, "Ashford_Rail_Corp", "sources.md")
+        text = open(path).read().replace(
+            "| 1 | Incorporated 1911 by Walter Ashgrove |",
+            "| 1 | Incorporated by Walter Ashgrove |")
+        open(path, "w").write(text)
+        with self.assertRaises(MutationError):
+            shift_date(self.root, "Ashford_Rail_Corp", "1")
+
+    def test_is_deterministic(self):
+        a = shift_date(self.root, "Ashford_Rail_Corp", "1")
+        load_corpus(FIXTURES, self.root)
+        b = shift_date(self.root, "Ashford_Rail_Corp", "1")
         self.assertEqual(a, b)
 
 

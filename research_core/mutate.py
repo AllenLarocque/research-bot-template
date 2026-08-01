@@ -134,3 +134,30 @@ def swap_citation(root, entity, row_id, other_entity):
 
     _replace_row(_ledger_path(root, entity), row_id, transform)
     return source
+
+
+_YEAR = re.compile(r"\b(1[6-9]\d{2}|20\d{2})\b")
+
+
+def shift_date(root, entity, row_id, delta=11):
+    """Move the claim's year without moving its quote's.
+
+    Models a dated event resting on a quote about a different year. `delta`
+    defaults to 11 so the shifted year cannot be mistaken for a typo or a
+    fiscal-year offset.
+    """
+    path = _ledger_path(root, entity)
+    captured = {}
+
+    def transform(cells):
+        found = _YEAR.search(cells[1])
+        if not found:
+            raise MutationError(f"row {row_id}'s claim carries no year to shift")
+        old = found.group(1)
+        new = str(int(old) + delta)
+        captured["years"] = (old, new)
+        cells[1] = cells[1].replace(old, new)
+        return cells
+
+    _replace_row(path, row_id, transform)
+    return captured["years"]
