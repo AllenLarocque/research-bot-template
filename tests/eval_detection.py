@@ -12,12 +12,15 @@ detection and defame a working tool; counting them as catches would overstate
 it. Either makes the number a fiction, which is what this harness exists to
 detect.
 """
+import json
 import os
 import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
+
+BASELINE = os.path.join(HERE, "eval_baseline.json")
 
 from research_core import mutate                       # noqa: E402
 from research_core.anchorcheck import missing_anchors   # noqa: E402
@@ -111,6 +114,26 @@ def run():
     return results
 
 
+def compare(res):
+    """(failures, improvements) against the committed baseline."""
+    with open(BASELINE, encoding="utf-8") as fh:
+        base = json.load(fh)
+    failures, improvements = [], []
+    for name, r in res.items():
+        want = base.get(name)
+        if want is None:
+            improvements.append(f"{name}: new class, measured "
+                                f"{r['caught']}/{r['cases']} — add to baseline")
+            continue
+        if r["caught"] < want["caught"]:
+            failures.append(f"{name}: {r['caught']}/{r['cases']}, "
+                            f"baseline {want['caught']}/{want['cases']}")
+        elif r["caught"] > want["caught"]:
+            improvements.append(f"baseline can rise: {name} "
+                                f"{want['caught']} -> {r['caught']}")
+    return failures, improvements
+
+
 def main():
     res = run()
     clean = res.pop("_clean")
@@ -136,6 +159,15 @@ def main():
 
     print(f"\n  not driven by this harness: {', '.join(NOT_DRIVABLE)}")
     print("  (reported n/a, counted neither as catches nor as misses)")
+
+    failures, improvements = compare(res)
+    for i in improvements:
+        print(f"\n  {i}")
+    if failures:
+        print("\nREGRESSION — a checker detects less than it used to:")
+        for f in failures:
+            print("   ", f)
+        return 1
     return 0
 
 

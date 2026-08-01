@@ -1,0 +1,8 @@
+{
+  "_comment": "Detection rates as measured on the date this file was written. These are a floor, not a target: a class at 0/6 is an honest record of a gap -- no detector in this toolset compares cited source identity, so swapped_citation stays at 0/6 and that is correct, not a bug to silently fix here. The eval fails when a class detects fewer cases than its baseline. Raising a number here is a deliberate act, done only after verifying a real improvement in the detectors, never to make the eval pass.",
+  "fabricated_quote": {"caught": 6, "cases": 6},
+  "paraphrase_as_quote": {"caught": 6, "cases": 6},
+  "swapped_citation": {"caught": 0, "cases": 6},
+  "shifted_date": {"caught": 6, "cases": 6},
+  "missing_anchor": {"caught": 6, "cases": 6}
+}
