@@ -13,17 +13,8 @@ import json
 import re
 
 from core.scripts.paths import CACHE
+from core.scripts.profile import DEFAULT
 from core.scripts.textutil import split_sentences, norm, slug
-
-# Reference-list / navigation debris that must never be offered as a quote.
-_JUNK = re.compile(
-    r"ISBN|ISSN|doi:|Retrieved \d|retrieved 20|Archived from|↑|\[ edit \]|"
-    r"Wayback Machine|Cite \w+|www\.|http|@|Special Collections|"
-    r"Oral History|\bp\. \d+|\bpp\. \d+|Harbour Publ|usw[.:]|"
-    r"Privacy policy|Toggle the|Skip to|Search Search|Jump to|Main menu|"
-    r"Sections News|Subscribe|Sign in|Log in|Newsletter|All rights reserved|"
-    r"Table of contents|Read Edit|View history|Download as PDF|"
-    r"About this capture|COLLECTED BY|\d+ captures|success fail|TIMESTAMPS", re.I)
 
 
 def load_manifest():
@@ -35,7 +26,7 @@ def source_text(title):
     return open(p).read() if os.path.isfile(p) else ""
 
 
-def src_sentences(title, maxlen=420):
+def src_sentences(title, profile=DEFAULT, maxlen=420):
     body = source_text(title)
     if len(body) < 400:
         return []
@@ -45,7 +36,7 @@ def src_sentences(title, maxlen=420):
         s = body[a:b].strip()
         if not (30 < len(s) < maxlen):
             continue
-        if _JUNK.search(s):
+        if profile.junk.search(s):
             continue
         # mostly citation apparatus: lots of bracketed refs or digits
         if len(re.findall(r"\[\s*\d+\s*\]", s)) > 1:
