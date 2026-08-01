@@ -29,14 +29,20 @@ first and back-filling a ledger is how invented quotes get in.
 `SKILL.md` in the correspondingly-named subdirectory of this skill
 (`source-vetting/SKILL.md`, `claim-ledger/SKILL.md`).
 
-`attribution`, `verification` and `publishing` are **MediaWiki-specific** —
-they assume a wikitext target and a MediaWiki publishing surface — and live
-under the adapter, not here: `research_mediawiki/attribution/SKILL.md`,
-`research_mediawiki/verification/SKILL.md`,
-`research_mediawiki/publishing/SKILL.md`. If your harness does not surface
-sub-skills as separately invocable, **read the file directly** at the start of
-that stage using the paths above. Do not run a stage from memory of what the
-sub-skill says.
+`attribution`, `verification` and `publishing` are **target-specific** — they
+assume a concrete publishing surface (markup dialect, live-site verification,
+a publish API) that this template deliberately does not know about — and are
+not defined here. Your adapter supplies them: it is the adapter's job to ship
+an `attribution/SKILL.md`, a `verification/SKILL.md` and a `publishing/SKILL.md`
+that implement these three stages for its target. When this table says
+`attribution`, read that as *your adapter's `attribution` sub-skill*, and
+likewise for `verification` and `publishing`. `research-bot-mediawiki` is one
+such adapter — it targets wikitext and a MediaWiki publishing surface — but
+it is an example, not the only shape this can take; a static-site adapter
+would supply the same three roles over Markdown and a build/deploy step
+instead. If your harness does not surface sub-skills as separately
+invocable, **read the file directly** at the start of that stage using your
+adapter's paths. Do not run a stage from memory of what the sub-skill says.
 
 ## The self-critique / anti-overclaim gate
 
