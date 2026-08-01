@@ -1,5 +1,10 @@
 # APA citation formats (entity Source pages)
 
+> **The worked examples below are invented.** Companies, publications, authors
+> and dates in the `e.g.` lines are illustrative placeholders chosen to show the
+> shape of each citation form — except Chandler (1977), which is a real book
+> cited correctly. Do not copy them as if they were real sources.
+
 Put the finished string in the Source page's `citation` field. That field is the
 single source of truth for the citation text — inline citation markers link back
 to the Source page rather than repeating it.
@@ -7,9 +12,9 @@ to the Source page rather than repeating it.
 - **Book:** Author, A. A. (Year). *Title in italics*. Publisher. ISBN.
   e.g., Chandler, A. D. (1977). *The Visible Hand: The Managerial Revolution in American Business*. Harvard University Press.
 - **Encyclopedia entry:** Author/Editor. (Year). Entry title. In *Encyclopedia name*. Publisher.
-  e.g., Francis, D. (Ed.). (2000). Example Manufacturing Company. In *Encyclopedia of American Business*. Britannica Publishing.
+  e.g., Aldridge, P. (Ed.). (2000). Example Manufacturing Company. In *Encyclopedia of American Business*. Britannica Publishing.
 - **News article:** Author, A. (Year, Month Day). Headline. *Publication*. URL
-  e.g., Rothenburger, M. (2015, December 5). Meridian-Highline celebrates rail plant's 50 years in Fairview. *Fairview Gazette*. https://…
+  e.g., Nuñez, M. (2015, December 5). Meridian-Highline celebrates rail plant's 50 years in Fairview. *Fairview Gazette*. https://…
 - **Web page / corporate site:** Organization. (Year). *Page title*. Site. URL
   e.g., Continental Rail Co. Ltd. (n.d.). *Our history*. Continental Rail. https://…
 - **Regulatory filing:** Company. (Year). *Form type: description* (Identifier). Regulator. URL

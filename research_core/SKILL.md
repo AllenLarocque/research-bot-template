@@ -73,7 +73,8 @@ Saturating the part you can see is not coverage.
 
 ## Worked example — `Fairview rail plant` traced through the pipeline
 
-Checked against the live page, 2026-07-27:
+**Illustrative.** The entity, its sources and the figures below are invented, to
+show what each stage produces. They are not a record of a real audit.
 
 | Stage | State |
 |---|---|
@@ -89,17 +90,18 @@ Every stage maps to a sub-skill and every done-item is checkable. The example is
 deliberately a page that **fails** — it shows the gate working rather than a
 page chosen to look good.
 
-## Retrofit backlog — closed 2026-07-28
+## Retrofit backlog
 
-The ~89 pages drafted before this skill set have been retrofitted. As of
-2026-07-28 the whole corpus passes both `verify_entity` and `check_render`.
-Standing state is recorded in `/dossiers/_runs.md`; the reasoning behind each
-correction is in `/dossiers/_journey.md`.
+Pages drafted before a skill set exists will not meet it. Plan a retrofit pass:
+re-run `verify_entity` and `check_render` over the whole corpus, record standing
+state in a run log, and keep the reasoning behind each correction where a later
+reader can find it.
 
 ## The failure mode that survives every mechanical check
 
 A citation can be **verbatim, resolvable, ledgered — and not evidence for the
-sentence it is attached to.** Three instances were found on 2026-07-28 alone:
+sentence it is attached to.** Three illustrative instances — invented, but each
+modelled on a real defect this check has caught:
 
 - `Right-of-Way 44` placed the corridor "within the townships of Ashford and
   Bellweather", cited to a quote naming neither.
