@@ -11,12 +11,12 @@ Decide two things about every source, before it is cited: **how credible is it**
 ## Credibility tiers
 
 - **T1 — primary / archival.** Government records, SEC and other regulatory
-  filings, archival fonds (the National Archives, a state or provincial
-  archive, a university's open collections), period newspapers, corporate
+  filings, archival fonds (the U.S. National Archives, Library and Archives
+  Canada, the Bodleian's special collections), period newspapers, corporate
   primary documents (annual reports, prospectuses).
 - **T2 — reputable secondary.** Encyclopaedia Britannica, university-press
-  books and peer-reviewed articles, established news outlets writing their own
-  reporting.
+  books by recognised historians of the field (e.g. Chandler, Hobsbawm),
+  established news outlets writing their own reporting.
 - **T3 — tertiary / aggregator.** Wikipedia, company "our history" pages,
   industry directories. **May corroborate; may never solely carry an
   `ai-verified` claim.**
@@ -61,7 +61,7 @@ Both trace to one origin — the press release. → **Not independent; counts as
 A claim resting only on these is `unverified`. (If Reuters adds its own
 reporting beyond the release, the added material may count separately.)
 
-**(b) The Britannica entry and a university-press monograph, written independently.**
+**(b) The Britannica entry and Chandler's *The Visible Hand*, written independently.**
 Two T2 sources, neither derived from the other. → **Independent; 2 of 2.**
 Eligible for `ai-verified`.
 
