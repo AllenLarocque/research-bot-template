@@ -5,17 +5,17 @@ single source of truth for the citation text — inline citation markers link ba
 to the Source page rather than repeating it.
 
 - **Book:** Author, A. A. (Year). *Title in italics*. Publisher. ISBN.
-  e.g., Drushka, K. (1995). *HR: A Biography of H.R. MacMillan*. Harbour Publishing.
+  e.g., Chandler, A. D. (1977). *The Visible Hand: The Managerial Revolution in American Business*. Harvard University Press.
 - **Encyclopedia entry:** Author/Editor. (Year). Entry title. In *Encyclopedia name*. Publisher.
-  e.g., Francis, D. (Ed.). (2000). Bloedel, Stewart & Welch. In *Encyclopedia of British Columbia*. Harbour Publishing.
+  e.g., Francis, D. (Ed.). (2000). Example Manufacturing Company. In *Encyclopedia of American Business*. Britannica Publishing.
 - **News article:** Author, A. (Year, Month Day). Headline. *Publication*. URL
   e.g., Rothenburger, M. (2015, December 5). Domtar celebrates pulp mill's 50 years in Kamloops. *Kamloops This Week*. https://…
 - **Web page / corporate site:** Organization. (Year). *Page title*. Site. URL
   e.g., West Fraser Timber Co. Ltd. (n.d.). *Our history*. West Fraser. https://…
 - **Regulatory filing:** Company. (Year). *Form type: description* (Identifier). Regulator. URL
-  e.g., Weyerhaeuser Company. (2000). *Form 8-K/A: Acquisition of MacMillan Bloedel Limited* (CIK 0000106535). U.S. Securities and Exchange Commission. https://…
+  e.g., Acme Corporation. (2000). *Form 8-K/A: Acquisition of Example Industries Limited* (CIK 0000000000). U.S. Securities and Exchange Commission. https://…
 - **Archival fonds:** *Fonds/record title* (dates). Repository. URL
-  e.g., *British Columbia Forest Products Limited fonds* (1946–1987). Royal BC Museum, BC Archives. https://…
+  e.g., *Example Manufacturing Company fonds* (1946–1987). Provincial Archives. https://…
 
 Notes:
 - Prefer a retrieval date only for pages likely to change (wikis, live corporate pages).

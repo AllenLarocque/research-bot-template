@@ -1,9 +1,9 @@
 ---
-name: forestwiki-research
+name: research
 description: Use when researching, drafting, or publishing any entity page (organization, facility, place, person, event) — routes through source-vetting, claim-ledger, attribution, verification and publishing, and enforces the self-critique gate before any completion claim.
 ---
 
-# forestwiki-research
+# research
 
 Produce **credible, fully-attributed, hallucination-resistant** entity pages.
 Every checkable on-page fact traces to a cited source; inference is visibly
@@ -53,10 +53,10 @@ and the emptiness is justified.** If the list is non-empty, say what is
 outstanding in the same breath as what is finished.
 
 This exists because of a specific failure on this project: coverage was declared
-"essentially exhaustive" when only the coastal MacMillan-Bloedel/WFP ownership
-web had been saturated — West Fraser, Interfor, Skeena, the Cariboo, the
-Kootenays, the north coast and all labour history were untouched. Saturating the
-part you can see is not coverage.
+"essentially exhaustive" when only the flagship Meridian-Highline ownership web
+had been saturated — Continental, Ashford, Bellweather, the eastern plants, the
+export terminals, the coastal yards and all labour history were untouched.
+Saturating the part you can see is not coverage.
 
 ## Definition of done (per entity)
 
@@ -103,8 +103,8 @@ sentence it is attached to.** Three instances were found on 2026-07-28 alone:
 
 - `TFL 44` placed the licence "within the territories of the Tseshaht First
   Nation and Hupacasath First Nation", cited to a quote naming neither.
-- `Cascadia Forest Products` dated its acquisition by Western to 1 May 2006,
-  cited to a Weyerhaeuser release about a 2005 timberland sale.
+- `Example Manufacturing Company` dated its acquisition by Acme Corporation to
+  1 May 2006, cited to a Consolidated Industries release about a 2005 real-estate sale.
 - `Sam Ketcham` had him moving to Williams Lake in 1959, cited to a quote about
   a mill built at Quesnel in 1970.
 
@@ -117,7 +117,7 @@ Two habits fall out of that experience:
 - **The lead sentence is the highest-risk sentence on any page.** It summarises
   the article and collects one citation that covers a fraction of what it says.
 - **Dates and superlatives are where unsourced text hides.** "renamed in 1989",
-  "the second-largest forest company in the province", "control passed to X in
+  "the second-largest employer in the region", "control passed to X in
   2006", "incorporated on 6 May" — every one of those was written by an earlier
   pass of this pipeline and none had a source.
 
