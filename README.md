@@ -33,7 +33,7 @@ research_core/       the package: import it as `research_core`
   source-vetting/SKILL.md  source-tier and independence vetting, format-neutral
   claim-ledger/SKILL.md    the claim-ledger sub-skill, format-neutral
   references/apa.md        APA citation-format reference
-tests/                unittest modules for every module above, plus test_layering.py
+tests/                unittest modules, plus test_layering.py (see Coverage below)
 ```
 
 ## Requirements
@@ -56,8 +56,18 @@ repo instead.
 
 ## Using this package
 
-Add this repo to your `sys.path` (or install it) and import `research_core`
+Add this repo to your `sys.path` and import `research_core`
 from an adapter that supplies the wiki- or publisher-specific pieces:
 source-independent vetting and ledger-building stay here; formatting
 citations for a specific markup language, verifying against a live
 publishing target, and pushing pages live are adapter concerns.
+
+## Coverage
+
+Every module has a unittest module except `findquote.py`, which arrived from the
+pre-split monorepo untested and still is. That gap is inherited, not introduced
+by the extraction, and is worth closing before anyone relies on it.
+
+There is no `setup.py` or `pyproject.toml` — this is not packaged for a package
+index. Put the repo on `sys.path`; there is nothing to install and no
+dependencies to resolve.
