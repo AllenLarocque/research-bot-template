@@ -11,8 +11,8 @@ usage: findquote.py "<anchor or phrase>" [more terms ...]
 import sys
 import re
 
-from core.scripts.srccache import load_manifest, source_text
-from core.scripts.textutil import split_sentences
+from research_core.srccache import load_manifest, source_text
+from research_core.textutil import split_sentences
 
 
 def main():

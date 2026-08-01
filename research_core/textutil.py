@@ -6,27 +6,27 @@
 "Relationship"/"Entity footer" template wikitext. None of the four functions
 here know what a wiki template, link or citation tag looks like -- they
 operate on plain strings (prose, a query term, a page title) -- so they move
-to core/ unchanged.
+to research_core/ unchanged.
 
 `plain()` (wikitext -> readable text) also lived in retro.py and the Task 8
 brief's interface sketch listed it here too, but its own implementation
 recognises link, ref-tag and template SYNTAX -- exactly the wikitext-structure
-knowledge core/ must not have (see tests/test_layering.py, which scans core/
-source text for that syntax literally, not just for behaviour). It moved to
-adapters/mediawiki/retro.py instead, alongside the other wikitext-structure
+knowledge research_core/ must not have (see tests/test_layering.py, which scans
+research_core/ source text for that syntax literally, not just for behaviour).
+It moved to research_mediawiki/retro.py instead, alongside the other wikitext-structure
 functions. This is a deliberate deviation from the brief for that one
-function; everything else here matches the brief's core.scripts.textutil
+function; everything else here matches the brief's research_core.textutil
 interface.
 
 `words()` here is the single source of truth for "content words: lowercased,
-stopwords and length-<=2 tokens dropped". core.scripts.weakcites used to carry
-a byte-identical copy (there was no core/ home for it to import from yet); it
-now imports this one instead.
+stopwords and length-<=2 tokens dropped". research_core.weakcites used to carry
+a byte-identical copy (there was no research_core/ home for it to import from
+yet); it now imports this one instead.
 """
 import re
 import unicodedata
 
-from core.scripts.profile import DEFAULT
+from research_core.profile import DEFAULT
 
 STOP = set("""a an the and or but of in on at to for from by with as is was were be been being
 it its this that these those which who whom whose has have had will would can could may might

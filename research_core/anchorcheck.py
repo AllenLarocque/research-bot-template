@@ -21,7 +21,7 @@ It still cannot decide support. It ranks pairs for reading.
 """
 import re
 
-from core.scripts.profile import DEFAULT
+from research_core.profile import DEFAULT
 
 
 def proper_nouns(s, profile=DEFAULT):

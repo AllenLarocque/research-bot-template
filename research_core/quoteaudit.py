@@ -23,7 +23,7 @@ import html
 import os
 import re
 
-from core.scripts.textutil import norm, words
+from research_core.textutil import norm, words
 
 _SCRIPTISH = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
 _ANY_TAG = re.compile(r"<[^>]+>")

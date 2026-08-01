@@ -31,9 +31,9 @@ first and back-filling a ledger is how invented quotes get in.
 
 `attribution`, `verification` and `publishing` are **MediaWiki-specific** —
 they assume a wikitext target and a MediaWiki publishing surface — and live
-under the adapter, not here: `adapters/mediawiki/attribution/SKILL.md`,
-`adapters/mediawiki/verification/SKILL.md`,
-`adapters/mediawiki/publishing/SKILL.md`. If your harness does not surface
+under the adapter, not here: `research_mediawiki/attribution/SKILL.md`,
+`research_mediawiki/verification/SKILL.md`,
+`research_mediawiki/publishing/SKILL.md`. If your harness does not surface
 sub-skills as separately invocable, **read the file directly** at the start of
 that stage using the paths above. Do not run a stage from memory of what the
 sub-skill says.

@@ -7,13 +7,13 @@ None of the three know anything about wikitext or source-page construction
 -- `fetch` downloads bytes over HTTP, `clean` turns raw HTML into plain text
 via regex + entity-unescaping, and `wayback` talks to archive.org's lookup
 API and hands back a bare capture URL (or "" / None) -- so they belong in
-core/ rather than in an adapter.
+research_core/ rather than in an adapter.
 
 DEFAULT_UA is deliberately neutral. The original mksource.py hardcoded a
 User-Agent naming the project and a personal email address, which puts both
 on the wire with every outbound request from a repo that is meant to be
 published; backfill.py separately hardcoded its own project-identifying
-User-Agent for wayback lookups. Neither string belongs in core/ -- the two
+User-Agent for wayback lookups. Neither string belongs in research_core/ -- the two
 adapter modules each pass their own UA explicitly via the `ua=` parameter on
 every call, so the bytes those two scripts actually put on the wire are
 unchanged; only the *default* a caller gets by saying nothing is different

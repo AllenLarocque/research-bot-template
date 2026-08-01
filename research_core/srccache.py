@@ -3,18 +3,18 @@
 
 Extracted from retro.py: `load_manifest`, `source_text`, `src_sentences` and
 `verify_quote` read files under the source-text cache (see
-core.scripts.paths.CACHE) -- they know nothing about wikitext or the wiki
-templates that reference a source, so they belong in core/ next to
-core.scripts.textutil, which they use for sentence splitting and
+research_core.paths.CACHE) -- they know nothing about wikitext or the wiki
+templates that reference a source, so they belong in research_core/ next to
+research_core.textutil, which they use for sentence splitting and
 quote normalisation.
 """
 import os
 import json
 import re
 
-from core.scripts.paths import CACHE
-from core.scripts.profile import DEFAULT
-from core.scripts.textutil import split_sentences, norm, slug
+from research_core.paths import CACHE
+from research_core.profile import DEFAULT
+from research_core.textutil import split_sentences, norm, slug
 
 
 def load_manifest():

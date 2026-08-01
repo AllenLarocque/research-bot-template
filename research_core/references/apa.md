@@ -38,5 +38,5 @@ Notes:
 
 The history of converting this project's corpus to APA, and the
 format-specific rendering rule that conversion surfaced, are recorded in
-`adapters/mediawiki/attribution/SKILL.md` (that history is tied to how one
+`research_mediawiki/attribution/SKILL.md` (that history is tied to how one
 specific wiki renders emphasis, not to the citation shapes above).

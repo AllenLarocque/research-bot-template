@@ -27,7 +27,7 @@ Two suppression rules keep this useful instead of pure noise:
 """
 import re
 
-from core.scripts.profile import DEFAULT
+from research_core.profile import DEFAULT
 
 OPEN_FIELDS = ("founded_date", "commissioned_date", "granted_date")
 CLOSE_FIELDS = ("closed_date", "dissolved_date")

@@ -13,10 +13,10 @@ where the sentence or quote text came from.
 import re
 
 # words() used to be a byte-identical copy of retro.words(), duplicated here
-# because no shared core/ module existed yet when this file was split out.
-# core.scripts.textutil is that shared home now, so this imports it instead
+# because no shared research_core/ module existed yet when this file was split out.
+# research_core.textutil is that shared home now, so this imports it instead
 # of carrying its own copy (and its own STOP set) forward.
-from core.scripts.textutil import words
+from research_core.textutil import words
 
 # Read from sys.argv at module scope in the original script, which made the
 # module impossible to import from a test. Now a plain default: callers that

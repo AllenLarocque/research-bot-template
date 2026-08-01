@@ -7,12 +7,12 @@ status, confidence), and `check_ledger_coverage` / `check_ai_verified` reason
 about the parsed rows and already-parsed relationship dicts (predicate,
 object, sources, verification). None of the three ever touch wikitext syntax
 -- the ledger is markdown, and the relationship dicts arrive pre-parsed from
-adapters.mediawiki.verify.parse_relationships -- so they belong in core/.
+research_mediawiki.verify.parse_relationships -- so they belong in research_core/.
 
 Everything that reads citation/reference/relationship template markup or
 rendered HTML (extract_cites, parse_relationships, check_ref_markup,
 missing_templates, check_render, verify_entity, main) stays in
-adapters/mediawiki/verify.py.
+research_mediawiki/verify.py.
 """
 
 EMPTY_QUOTE = ("", "—", "-", "–", "n/a", "N/A")
@@ -55,7 +55,7 @@ def check_ai_verified(rels):
     """ai-verified requires 2+ sources (independence is a human/source-vetting call).
 
     `rels` is a list of already-parsed relationship dicts (predicate, object,
-    sources, verification) -- see adapters.mediawiki.verify.parse_relationships,
+    sources, verification) -- see research_mediawiki.verify.parse_relationships,
     which turns relationship template markup into this shape before calling here.
     """
     errs = []
