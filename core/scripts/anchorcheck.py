@@ -21,22 +21,15 @@ It still cannot decide support. It ranks pairs for reading.
 """
 import re
 
-# Capitalised words that are not names: sentence openers, and geography so
-# ubiquitous in this domain that flagging it is pure noise.
-NOT_NAMES = {
-    "the", "a", "an", "in", "on", "at", "by", "for", "from", "its", "it", "he",
-    "she", "they", "this", "that", "these", "those", "and", "but", "or", "if",
-    "when", "while", "after", "before", "during", "british", "columbia",
-    "vancouver", "island", "first", "nations", "nation",
-}
+from core.scripts.profile import DEFAULT
 
 
-def proper_nouns(s):
+def proper_nouns(s, profile=DEFAULT):
     """Multi-word capitalised runs, lowercased. Single words are too noisy."""
     out = set()
     for m in re.finditer(r"\b([A-Z][a-zA-Z&.\-']+(?:\s+[A-Z][a-zA-Z&.\-']+)+)", s):
         name = m.group(1).lower()
-        if all(w in NOT_NAMES for w in name.split()):
+        if all(w in profile.not_names for w in name.split()):
             continue
         out.add(name)
     return out
@@ -54,15 +47,12 @@ def flat(s):
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]+", " ", s.lower())).strip()
 
 
-TITLES = {"premier", "justice", "chief", "mr", "mrs", "ms", "dr", "sir", "hereditary",
-          "councillor", "elder", "president", "the", "late"}
-
 # Pairs a source may write differently from an encyclopedia sentence.
 EQUIV = [("united states", "u s"), ("united states", "usa"),
          ("great britain", "britain"), ("saint", "st")]
 
 
-def name_present(name, haystack):
+def name_present(name, haystack, profile=DEFAULT):
     """Is this name carried by the text, allowing for the ways sources shorten names?
 
     A source almost never repeats a name the way an encyclopedia sentence does.
@@ -79,7 +69,7 @@ def name_present(name, haystack):
     for a, b in EQUIV:
         if a in fn and b in haystack:
             return True
-    words = [w for w in fn.split() if w not in TITLES and w != "s"]
+    words = [w for w in fn.split() if w not in profile.titles and w != "s"]
     if len(words) > 1:
         acronym = "".join(w[0] for w in words)
         if len(acronym) >= 2 and re.search(r"\b%s\b" % re.escape(acronym), haystack):
@@ -89,15 +79,15 @@ def name_present(name, haystack):
     return False
 
 
-def missing_anchors(claim, quotes, source_titles, want_figures):
+def missing_anchors(claim, quotes, source_titles, want_figures, profile=DEFAULT):
     """Anchors the claim asserts that no quote carries."""
     joined = flat(" ".join(quotes))
     titles = flat(" ".join(source_titles))
     qy = years(" ".join(quotes))
     qf = figures(" ".join(quotes))
     miss = []
-    for n in proper_nouns(claim):
-        if name_present(n, joined) or name_present(n, titles):
+    for n in proper_nouns(claim, profile):
+        if name_present(n, joined, profile) or name_present(n, titles, profile):
             continue
         miss.append("name:" + n)
     # A source titled with a date dates its own claim; so does a source page
