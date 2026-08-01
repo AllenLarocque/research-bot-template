@@ -84,6 +84,24 @@ class TestLoad(ProfileCase):
         p = load(self.write('name = "x"\njunk_patterns = ["Harbour Publ"]\n'))
         self.assertTrue(p.junk.search("harbour publ"))
 
+    def test_owned_things_word_with_regex_metacharacters_matches_literally(self):
+        # owned_things is documented as a word LIST. A word containing a
+        # regex metacharacter must still compile and must match itself
+        # literally, not be interpreted as a pattern fragment.
+        p = load(self.write('name = "x"\nowned_things = ["co-op", "R&D", "5(a)"]\n'))
+        self.assertTrue(p.owned_things.search("the co-op closed"))
+        self.assertTrue(p.owned_things.search("led by R&D"))
+        self.assertTrue(p.owned_things.search("see clause 5(a) below"))
+
+    def test_junk_patterns_still_behave_as_regex(self):
+        # junk_patterns is documented as PATTERNS, unlike owned_things, and
+        # must remain unescaped so a domain can still supply real regex.
+        # Single-quoted (TOML literal string) so the backslash reaches
+        # tomllib unescaped.
+        p = load(self.write("name = \"x\"\njunk_patterns = ['Harbour \\d+']\n"))
+        self.assertTrue(p.junk.search("Harbour 42"))
+        self.assertFalse(p.junk.search("Harbour Publishing"))
+
     def test_an_absent_section_simply_adds_nothing(self):
         p = load(self.write('name = "x"\n'))
         self.assertEqual(p.abbreviations, DEFAULT.abbreviations)

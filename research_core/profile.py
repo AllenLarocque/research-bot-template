@@ -92,8 +92,16 @@ def load(path):
     if not data.get("name"):
         raise ProfileError(f"{path}: missing required key 'name'")
 
+    # (?<!\w)/(?!\w) rather than \b on each side: \b only fires on a
+    # transition between a word and a non-word character, so a word that
+    # itself ENDS or STARTS on an escaped metacharacter -- "5(a)" ends in
+    # ")", a non-word char -- would need its neighbour to be a word char
+    # too, which "5(a) below" (a space) never is. The lookarounds only ask
+    # that the character just outside the match not be a word character,
+    # which is what "whole word, not embedded in a larger identifier"
+    # actually means and holds regardless of what the word's own edges are.
     words = data.get("owned_things", [])
-    owned = (re.compile(r"\b(" + "|".join(words) + r")\b", re.I)
+    owned = (re.compile(r"(?<!\w)(" + "|".join(re.escape(w) for w in words) + r")(?!\w)", re.I)
              if words else _MATCH_NOTHING)
 
     junk = BASE_JUNK
