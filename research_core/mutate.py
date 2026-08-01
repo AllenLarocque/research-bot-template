@@ -86,3 +86,29 @@ def fabricate_quote(root, entity, row_id):
 
     _replace_row(path, row_id, transform)
     return _FABRICATED
+
+
+def paraphrase_quote(root, entity, row_id):
+    """Reverse the quote's word order, keeping every word.
+
+    Models a paraphrase presented inside quotation marks: the content is
+    genuinely in the source, the sentence is not. Reversal is crude but it is
+    deterministic and it guarantees the property that matters — every content
+    word present, the contiguous string absent.
+    """
+    path = _ledger_path(root, entity)
+    captured = {}
+
+    def transform(cells):
+        quoted = re.findall(r'"([^"]+)"', cells[2])
+        if not quoted:
+            raise MutationError(f"row {row_id} has no quoted span to paraphrase")
+        words = quoted[0].split()
+        if len(words) < 4:
+            raise MutationError(f"row {row_id}'s quote is too short to reorder")
+        captured["text"] = " ".join(reversed(words))
+        cells[2] = f'"{captured["text"]}"'
+        return cells
+
+    _replace_row(path, row_id, transform)
+    return captured["text"]

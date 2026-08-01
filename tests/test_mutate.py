@@ -13,7 +13,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from research_core.mutate import MutationError, fabricate_quote, load_corpus
+from research_core.mutate import (MutationError, fabricate_quote, load_corpus,
+                                  paraphrase_quote)
 from research_core.quoteaudit import audit
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -87,6 +88,31 @@ class TestFabricateQuote(MutateCase):
     def test_unknown_entity_raises(self):
         with self.assertRaises(MutationError):
             fabricate_quote(self.root, "No_Such_Entity", "1")
+
+
+class TestParaphraseQuote(MutateCase):
+    def test_row_stops_verifying(self):
+        paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
+        self.assertEqual(self.verdict("Ashford_Rail_Corp", "1"), "MISSING")
+
+    def test_every_word_is_still_in_the_snapshot(self):
+        # This is what distinguishes a paraphrase from a fabrication: the
+        # content is real, the sentence is not. quoteaudit scores it 1.0.
+        injected = paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
+        from research_core.quoteaudit import coverage, snapshot_text
+        body = snapshot_text(os.path.join(self.root, "Ashford_Rail_Corp"))
+        self.assertEqual(coverage(injected, body), 1.0)
+
+    def test_is_not_merely_the_original_quote(self):
+        original = self.ledger("Ashford_Rail_Corp")
+        injected = paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
+        self.assertNotIn(f'"{injected}"', original)
+
+    def test_is_deterministic(self):
+        a = paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
+        load_corpus(FIXTURES, self.root)
+        b = paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
+        self.assertEqual(a, b)
 
 
 if __name__ == "__main__":
