@@ -45,4 +45,5 @@ def main(profile=DEFAULT):
     print("\n%d candidate sentence(s)" % hits)
 
 
-main()
+if __name__ == "__main__":
+    main()

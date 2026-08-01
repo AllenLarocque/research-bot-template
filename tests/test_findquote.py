@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for research_core.findquote's profile-driven sentence splitting.
-
-findquote.py calls `main()` unmodified at import time (a pre-existing quirk,
-not something this task's scope covers -- see fix-f2-f3-report.md). To import
-it safely under any test runner, sys.argv is pinned to an empty-args shape
-for the duration of the import so that one-time call takes the harmless
-"print usage and return" branch, and its stdout is swallowed so test output
-stays pristine.
-"""
+"""Tests for research_core.findquote's profile-driven sentence splitting."""
 import contextlib
 import io
 import json
@@ -19,12 +11,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-_saved_argv = sys.argv
-sys.argv = ["findquote.py"]
-with contextlib.redirect_stdout(io.StringIO()):
-    from research_core import findquote
-sys.argv = _saved_argv
-
+from research_core import findquote
 from research_core import srccache
 from research_core.profile import load
 from research_core.textutil import slug
