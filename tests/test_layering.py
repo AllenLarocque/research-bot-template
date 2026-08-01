@@ -100,20 +100,6 @@ FORBIDDEN_PROSE_ONLY = [
 # all-caps and anything else is not the sanctioned pattern.
 ENV_VAR_EXEMPT = re.compile(r"\bFORESTWIKI_(?:[A-Z_]+|\*)")
 
-# The other sanctioned occurrence: research_core/SKILL.md's own frontmatter
-# `name:` and matching H1 declare the skill PACKAGE's name, which is
-# "forestwiki-research" -- a deployed identifier (the directory this skill
-# is installed under, and the path segment the differential test harnesses
-# and research_mediawiki/README.md's install instructions all key off of),
-# not a stray mention of the wiki brand in running prose. Renaming the
-# skillset itself is exactly the kind of behaviour change (ripples into
-# install paths, /dossiers/_skillset/forestwiki-research/, docs) this pass
-# is not authorized to make -- see the review's own "out of scope" list.
-# Exempted narrowly by the exact compound identifier, not by "forestwiki"
-# bare, so a real leak of the word elsewhere in research_core/ is still caught.
-SKILL_NAME_EXEMPT = re.compile(r"forestwiki-research\b")
-
-
 def _exempted(match, exempt_spans):
     return any(s <= match.start() and match.end() <= e for s, e in exempt_spans)
 
@@ -150,8 +136,7 @@ class TestLayering(unittest.TestCase):
             text = _read_text(path)
             if text is None:
                 continue
-            exempt_spans = ([m.span() for m in ENV_VAR_EXEMPT.finditer(text)]
-                            + [m.span() for m in SKILL_NAME_EXEMPT.finditer(text)])
+            exempt_spans = [m.span() for m in ENV_VAR_EXEMPT.finditer(text)]
             checks = list(FORBIDDEN)
             if not path.endswith(".py"):
                 checks += FORBIDDEN_PROSE_ONLY
