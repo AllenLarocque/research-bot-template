@@ -21,11 +21,13 @@ Two suppression rules keep this useful instead of pure noise:
     year, means the date belongs to that thing, not to the subject itself
     ("Acme's depot ... closed in 1983"). What counts as an "owned thing" is
     domain vocabulary, not something this module knows -- callers pass it in
-    as `owned_things`;
+    via a `Profile`'s `owned_things`;
   * a pronoun between the name and the year means the sentence has moved on
     to a different subject ("opened it in 1912", "It was formed in 2008").
 """
 import re
+
+from core.scripts.profile import DEFAULT
 
 OPEN_FIELDS = ("founded_date", "commissioned_date", "granted_date")
 CLOSE_FIELDS = ("closed_date", "dissolved_date")
@@ -36,13 +38,14 @@ _YEAR = r"\b(1[6-9]\d{2}|20\d{2})\b"
 _PRONOUNS = r"\b(it|its|which|that|they|whose|this)\b"
 
 
-def date_conflicts(subject, prose, years, owned_things, window=90):
+def date_conflicts(subject, prose, years, profile=DEFAULT, window=90):
     """Mentions of `subject` in `prose` whose nearby year disagrees with `years`.
 
     `years` is `subject`'s own {field: year} (e.g. {"closed_date": "1990"}).
-    `owned_things` is a regex for nouns that suppress a match when they stand
-    between the name and the year (see module docstring) -- an injected
-    parameter, not a constant, because it is domain vocabulary.
+    `profile.owned_things` is a regex for nouns that suppress a match when
+    they stand between the name and the year (see module docstring) -- an
+    injected parameter, not a constant, because it is domain vocabulary.
+    Defaults to `DEFAULT`, whose `owned_things` matches nothing.
 
     Extracted from the original script's `main`, which searched every
     occurrence of `subject` in a host page's prose, inspected a `window`-char
@@ -63,8 +66,8 @@ def date_conflicts(subject, prose, years, owned_things, window=90):
         for yr in re.findall(_YEAR, seg):
             before = seg[:seg.find(yr)]
             after = seg[seg.find(yr) + 4: seg.find(yr) + 34]
-            if re.search(owned_things, before, re.I) or \
-               re.search(owned_things, after, re.I):
+            if profile.owned_things.search(before) or \
+               profile.owned_things.search(after):
                 continue
             if re.search(_PRONOUNS, before, re.I):
                 continue
