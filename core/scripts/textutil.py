@@ -26,9 +26,7 @@ now imports this one instead.
 import re
 import unicodedata
 
-ABBREV = ("H.R.", "W.J.", "E.P.", "J.H.", "B.C.", "U.S.", "Inc.", "Ltd.", "Co.",
-          "Corp.", "St.", "Mt.", "Dr.", "Mr.", "Ms.", "No.", "Jr.", "Sr.",
-          "a.m.", "p.m.", "approx.")
+from core.scripts.profile import DEFAULT
 
 STOP = set("""a an the and or but of in on at to for from by with as is was were be been being
 it its this that these those which who whom whose has have had will would can could may might
@@ -40,14 +38,14 @@ def slug(t):
     return re.sub(r"[^A-Za-z0-9]+", "_", t)[:120]
 
 
-def split_sentences(text):
+def split_sentences(text, profile=DEFAULT):
     """Split prose into sentences, respecting known abbreviations. Returns
     list of (start, end) offsets relative to `text`."""
     spans, pos = [], 0
     for m in re.finditer(r"[.!?](?=[\s\"')\]]|$)", text):
         i = m.end()
         tail = text[max(0, i - 6):i]
-        if any(tail.endswith(a) for a in ABBREV):
+        if any(tail.endswith(a) for a in profile.abbreviations):
             continue
         # skip decimals / initials like "J. H."
         if re.search(r"\b[A-Z]\.$", text[max(0, i - 3):i]):
