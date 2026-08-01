@@ -75,5 +75,57 @@ class TestSrcSentencesUsesTheProfile(unittest.TestCase):
         self.assertFalse(self._quoted(load(path)))
 
 
+class TestSrcSentencesThreadsProfileToSplitSentences(unittest.TestCase):
+    """src_sentences takes a profile but must hand it to split_sentences too,
+    or the profile's abbreviations never affect where sentences break.
+
+    "Twp." is absent from the general base and multi-letter, so (per
+    tests/test_textutil.py::TestSplitSentencesUsesProfile) it is the one
+    abbreviation whose effect on splitting is observable here -- H.R.-shaped
+    abbreviations are protected by split_sentences' own single-capital-letter
+    guard regardless of the profile.
+
+    The padding sentence is deliberately 34 chars ("The office sits in
+    Twp." is not it -- see TEXT below): long enough to clear src_sentences'
+    30-char floor on its own, while the second half ("It closed in 1975.")
+    is deliberately kept under 30 chars so it is filtered out UNLESS the
+    profile's abbreviation keeps the two halves joined into one candidate
+    that clears the floor as a whole. That makes the observable difference
+    which exact string comes back, not just a count.
+    """
+
+    PADDING = ("The company operated three facilities in the region for many "
+               "years. Production continued through the post-war period "
+               "without interruption. ") * 3
+    TEXT = ("The township office building sits in Twp. It closed for good "
+            "in 1975. ")
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        with open(os.path.join(self.dir, slug("Src") + ".txt"), "w") as fh:
+            fh.write(self.PADDING + self.TEXT)
+        original = srccache.CACHE
+        srccache.CACHE = self.dir
+        self.addCleanup(setattr, srccache, "CACHE", original)
+
+    def test_default_profile_splits_at_twp_so_the_tail_is_dropped(self):
+        got = srccache.src_sentences("Src")
+        self.assertIn("The township office building sits in Twp.", got)
+        self.assertNotIn(
+            "The township office building sits in Twp. It closed for good "
+            "in 1975.", got)
+
+    def test_profile_knowing_twp_keeps_the_sentence_whole(self):
+        path = os.path.join(self.dir, "profile.toml")
+        with open(path, "w") as fh:
+            fh.write('name = "x"\nabbreviations = ["Twp."]\n')
+        got = srccache.src_sentences("Src", load(path))
+        self.assertIn(
+            "The township office building sits in Twp. It closed for good "
+            "in 1975.", got)
+        self.assertNotIn("The township office building sits in Twp.", got)
+
+
 if __name__ == "__main__":
     unittest.main()

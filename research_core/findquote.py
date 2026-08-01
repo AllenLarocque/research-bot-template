@@ -13,9 +13,10 @@ import re
 
 from research_core.srccache import load_manifest, source_text
 from research_core.textutil import split_sentences
+from research_core.profile import DEFAULT
 
 
-def main():
+def main(profile=DEFAULT):
     args = sys.argv[1:]
     only = None
     if args and args[0] == "--source":
@@ -32,7 +33,7 @@ def main():
         if not body:
             continue
         flat = re.sub(r"\s+", " ", body)
-        for a, b in split_sentences(flat):
+        for a, b in split_sentences(flat, profile):
             s = flat[a:b].strip()
             if not (25 < len(s) < 420):
                 continue

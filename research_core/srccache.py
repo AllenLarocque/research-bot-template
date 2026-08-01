@@ -32,7 +32,7 @@ def src_sentences(title, profile=DEFAULT, maxlen=420):
         return []
     body = re.sub(r"\s+", " ", body)
     out = []
-    for a, b in split_sentences(body):
+    for a, b in split_sentences(body, profile):
         s = body[a:b].strip()
         if not (30 < len(s) < maxlen):
             continue
