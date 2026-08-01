@@ -161,3 +161,22 @@ def shift_date(root, entity, row_id, delta=11):
 
     _replace_row(path, row_id, transform)
     return captured["years"]
+
+
+def strip_anchor(root, entity, row_id, name="Bellweather Junction Trust"):
+    """Add an entity to the claim that none of its quotes names.
+
+    Models the most recurrent defect observed: a claim asserting a specific
+    named party, cited to a quote naming nobody. Multi-word and capitalised so
+    it reads as a proper noun to anchor detection.
+    """
+    path = _ledger_path(root, entity)
+
+    def transform(cells):
+        if name in cells[1]:
+            raise MutationError(f"row {row_id} already names {name}")
+        cells[1] = f"{cells[1]}, in partnership with {name}"
+        return cells
+
+    _replace_row(path, row_id, transform)
+    return name

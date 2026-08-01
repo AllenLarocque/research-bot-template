@@ -14,7 +14,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.mutate import (MutationError, fabricate_quote, load_corpus,
-                                  paraphrase_quote, shift_date, swap_citation)
+                                  paraphrase_quote, shift_date, strip_anchor,
+                                  swap_citation)
 from research_core.quoteaudit import audit
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -171,6 +172,32 @@ class TestShiftDate(MutateCase):
         a = shift_date(self.root, "Ashford_Rail_Corp", "1")
         load_corpus(FIXTURES, self.root)
         b = shift_date(self.root, "Ashford_Rail_Corp", "1")
+        self.assertEqual(a, b)
+
+
+class TestStripAnchor(MutateCase):
+    def test_claim_names_an_entity_no_quote_carries(self):
+        name = strip_anchor(self.root, "Ashford_Rail_Corp", "1")
+        led = self.ledger("Ashford_Rail_Corp")
+        row = [l for l in led.splitlines() if l.strip().startswith("| 1 |")][0]
+        self.assertIn(name, row.split("|")[2])
+        self.assertNotIn(name, row.split("|")[3])
+
+    def test_anchorcheck_sees_the_injected_name(self):
+        # The detector this operator targets, driven directly.
+        from research_core.anchorcheck import missing_anchors
+        name = strip_anchor(self.root, "Ashford_Rail_Corp", "1")
+        led = self.ledger("Ashford_Rail_Corp")
+        row = [l for l in led.splitlines() if l.strip().startswith("| 1 |")][0]
+        claim, quote = row.split("|")[2].strip(), row.split("|")[3].strip()
+        miss = missing_anchors(claim, [quote], [], False)
+        self.assertTrue(any(name.lower() in m.lower() for m in miss),
+                        f"anchorcheck missed the injected name: {miss}")
+
+    def test_is_deterministic(self):
+        a = strip_anchor(self.root, "Ashford_Rail_Corp", "1")
+        load_corpus(FIXTURES, self.root)
+        b = strip_anchor(self.root, "Ashford_Rail_Corp", "1")
         self.assertEqual(a, b)
 
 
