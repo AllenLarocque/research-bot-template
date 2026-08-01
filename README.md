@@ -64,9 +64,12 @@ publishing target, and pushing pages live are adapter concerns.
 
 ## Coverage
 
-Every module has a unittest module except `findquote.py`, which arrived from the
-pre-split monorepo untested and still is. That gap is inherited, not introduced
-by the extraction, and is worth closing before anyone relies on it.
+Every module has a unittest module. `findquote.py` arrived from the pre-split
+monorepo untested; `tests/test_findquote.py` now covers its CLI behaviour --
+multi-term AND matching, case-insensitivity, the 25/420-char length window,
+`--source` filtering, missing-cache-file handling, sorted title ordering, and
+the profile threading into `split_sentences` -- in addition to the no-args
+usage message.
 
 There is no `setup.py` or `pyproject.toml` — this is not packaged for a package
 index. Put the repo on `sys.path`; there is nothing to install and no
