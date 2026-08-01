@@ -11,10 +11,11 @@ Decide two things about every source, before it is cited: **how credible is it**
 ## Credibility tiers
 
 - **T1 — primary / archival.** Government records, SEC and other regulatory
-  filings, archival fonds (BC Archives, MemoryBC, UBC Open Collections), period
+  filings, archival fonds (provincial or state archives, regional archive
+  aggregators, university open collections), period
   newspapers, corporate primary documents (annual reports, prospectuses).
-- **T2 — reputable secondary.** The Canadian Encyclopedia, Encyclopedia of BC
-  (KnowBC), scholarly books and articles (e.g. Hak, Drushka), established news
+- **T2 — reputable secondary.** National and regional encyclopedias, scholarly
+  books and articles by recognised historians of the field, established news
   outlets writing their own reporting.
 - **T3 — tertiary / aggregator.** Wikipedia, company "our history" pages,
   industry directories. **May corroborate; may never solely carry an
@@ -60,10 +61,10 @@ Both trace to one origin — the press release. → **Not independent; counts as
 A claim resting only on these is `unverified`. (If Reuters adds its own
 reporting beyond the release, the added material may count separately.)
 
-**(b) The Canadian Encyclopedia entry and a Drushka book, written independently.**
+**(b) A national encyclopedia entry and a scholarly monograph, written independently.**
 Two T2 sources, neither derived from the other. → **Independent; 2 of 2.**
 Eligible for `ai-verified`.
 
-**(c) Wikipedia article and the Encyclopedia of BC entry it cites as a reference.**
+**(c) Wikipedia article and the regional encyclopedia entry it cites as a reference.**
 Derived. → **Not independent; counts as 1** — and the Wikipedia one is T3
-anyway, so cite the Encyclopedia of BC directly instead.
+anyway, so cite the regional encyclopedia directly instead.

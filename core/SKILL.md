@@ -105,8 +105,8 @@ sentence it is attached to.** Three instances were found on 2026-07-28 alone:
   Bellweather", cited to a quote naming neither.
 - `Example Manufacturing Company` dated its acquisition by Acme Corporation to
   1 May 2006, cited to a Consolidated Industries release about a 2005 real-estate sale.
-- `Sam Ketcham` had him moving to Williams Lake in 1959, cited to a quote about
-  a mill built at Quesnel in 1970.
+- `Walter Ashgrove` had him moving to Fairview in 1959, cited to a quote about
+  a depot built at Bellweather in 1970.
 
 `scripts/anchorcheck.py` exists for this. Run it — with `weakcites.py` — before
 declaring a batch done, and read what it surfaces. Roughly one flag in three has
