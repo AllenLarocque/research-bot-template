@@ -112,3 +112,25 @@ def paraphrase_quote(root, entity, row_id):
 
     _replace_row(path, row_id, transform)
     return captured["text"]
+
+
+def swap_citation(root, entity, row_id, other_entity):
+    """Repoint a row at a source belonging to a different entity.
+
+    Models a claim cited to a source that does not support it — the recurring
+    shape where a purchase is cited to a quote about a sale. The quote itself
+    stays real, so verbatim checking cannot see this one.
+    """
+    donor = _ledger_path(root, other_entity)
+    with open(donor, encoding="utf-8") as fh:
+        donor_text = fh.read()
+    _, donor_line = _row_line(donor_text, "1")
+    donor_cells = [c.strip() for c in donor_line.strip().strip("|").split("|")]
+    source, url = donor_cells[3], donor_cells[4]
+
+    def transform(cells):
+        cells[3], cells[4] = source, url
+        return cells
+
+    _replace_row(_ledger_path(root, entity), row_id, transform)
+    return source

@@ -14,7 +14,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.mutate import (MutationError, fabricate_quote, load_corpus,
-                                  paraphrase_quote)
+                                  paraphrase_quote, swap_citation)
 from research_core.quoteaudit import audit
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -112,6 +112,29 @@ class TestParaphraseQuote(MutateCase):
         a = paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
         load_corpus(FIXTURES, self.root)
         b = paraphrase_quote(self.root, "Ashford_Rail_Corp", "1")
+        self.assertEqual(a, b)
+
+
+class TestSwapCitation(MutateCase):
+    def test_row_now_cites_the_other_entitys_source(self):
+        name = swap_citation(self.root, "Ashford_Rail_Corp", "1",
+                             "Fairview_Works")
+        self.assertIn(name, self.ledger("Ashford_Rail_Corp"))
+
+    def test_quote_no_longer_matches_the_cited_source(self):
+        # The quote still verifies somewhere in the corpus — it is real text —
+        # but not against what the row now claims as its source.
+        swap_citation(self.root, "Ashford_Rail_Corp", "1", "Fairview_Works")
+        self.assertEqual(self.verdict("Ashford_Rail_Corp", "1"), "LOCAL")
+
+    def test_raises_when_the_other_entity_has_no_rows(self):
+        with self.assertRaises(MutationError):
+            swap_citation(self.root, "Ashford_Rail_Corp", "1", "No_Such_Entity")
+
+    def test_is_deterministic(self):
+        a = swap_citation(self.root, "Ashford_Rail_Corp", "1", "Fairview_Works")
+        load_corpus(FIXTURES, self.root)
+        b = swap_citation(self.root, "Ashford_Rail_Corp", "1", "Fairview_Works")
         self.assertEqual(a, b)
 
 
