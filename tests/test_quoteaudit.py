@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Tests for research_core.quoteaudit — auditing ledger quotes against snapshots.
 
-Motivated by a fabricated quote found on 2026-07-31: a dossier attributed a
-sentence to a source whose captured snapshot does not contain it anywhere. The
-claim had already been demoted on the page, but the invented quote stayed in
-the ledger, where it reads as genuine provenance to anything re-checking the
-file.
+Motivated by a 2026-07-31 finding: a dossier attributed a sentence to a source
+whose captured snapshot does not contain it anywhere.
+
+That was recorded at the time as a fabricated quote. It was not. A 2026-08-02
+audit re-fetched the sources and found the sentence verbatim in the
+International Directory of Company Histories — real text, cited to the wrong
+source. The original pass had established absence from our captures and
+reported invention, which is a different and larger claim.
 
 The audit is deliberately space-insensitive. Scanned-newspaper OCR breaks words
 across column boundaries ("government offi cials"), so a space-sensitive check
