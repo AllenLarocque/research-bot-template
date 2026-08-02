@@ -10,7 +10,9 @@ indexes on meta.get("url"), so anything weaker than an observation must not
 appear there, or a guess gets promoted to a fact by code that is behaving
 correctly.
 """
+import contextlib
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -19,7 +21,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from research_core.backfill_sidecars import infer, write
+from research_core.backfill_sidecars import ATTRIBUTIONS, infer, main, summarise, write
 
 URL_A = "https://example.org/gazette-1911"
 URL_B = "https://elsewhere.test/continental-history"
@@ -186,6 +188,60 @@ class TestWrite(InferCase):
         write(infer(self.entity), self.entity)
         with open(self.sidecar_path()) as fh:
             self.assertNotIn("snapshot", json.load(fh))
+
+
+class TestSummarise(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.root = os.path.join(self.dir, "corpus")
+        for name in ("Ashford_Rail_Corp", "Fairview_Works"):
+            snaps = os.path.join(self.root, name, "snapshots")
+            os.makedirs(snaps)
+            with open(os.path.join(self.root, name, "sources.md"), "w") as fh:
+                fh.write(LEDGER)
+            with open(os.path.join(snaps, "a.html"), "w") as fh:
+                fh.write('<a href="%s">x</a>' % URL_A)
+
+    def test_counts_every_entity(self):
+        self.assertEqual(summarise(self.root)["inferred-exact"], 2)
+
+    def test_skips_underscore_prefixed_bookkeeping_directories(self):
+        book = os.path.join(self.root, "_runs")
+        os.makedirs(os.path.join(book, "snapshots"))
+        shutil.copy(os.path.join(self.root, "Ashford_Rail_Corp", "sources.md"),
+                    os.path.join(book, "sources.md"))
+        with open(os.path.join(book, "snapshots", "a.html"), "w") as fh:
+            fh.write('<a href="%s">x</a>' % URL_A)
+        self.assertEqual(summarise(self.root)["inferred-exact"], 2)
+
+    def test_reports_all_four_attributions_even_at_zero(self):
+        # A summary that omits empty classes hides what was not found.
+        self.assertEqual(sorted(summarise(self.root)), sorted(ATTRIBUTIONS))
+
+
+class TestMainIsDryByDefault(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.root = os.path.join(self.dir, "corpus")
+        snaps = os.path.join(self.root, "E", "snapshots")
+        os.makedirs(snaps)
+        with open(os.path.join(self.root, "E", "sources.md"), "w") as fh:
+            fh.write(LEDGER)
+        with open(os.path.join(snaps, "a.html"), "w") as fh:
+            fh.write('<a href="%s">x</a>' % URL_A)
+        self.sidecar = os.path.join(snaps, "a.html.meta.json")
+
+    def test_no_write_flag_means_no_files_change(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            main([self.root])
+        self.assertFalse(os.path.isfile(self.sidecar))
+
+    def test_write_flag_persists(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            main([self.root, "--write"])
+        self.assertTrue(os.path.isfile(self.sidecar))
 
 
 if __name__ == "__main__":

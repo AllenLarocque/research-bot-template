@@ -32,8 +32,10 @@ import html
 import json
 import os
 import re
+import sys
 from datetime import datetime, timezone
 
+from research_core.paths import DOSSIERS
 from research_core.quoteaudit import SIDECAR_SUFFIX, ledger_quotes
 
 ATTRIBUTIONS = ("inferred-exact", "inferred-domain", "ambiguous", "unknown")
@@ -125,3 +127,49 @@ def write(records, entity_dir, dry_run=False):
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(body, fh, indent=1, sort_keys=True)
     return counts
+
+
+def summarise(root):
+    """{attribution: count} across a corpus root."""
+    counts = {a: 0 for a in ATTRIBUTIONS}
+    for name in sorted(os.listdir(root)):
+        entity_dir = os.path.join(root, name)
+        if name.startswith("_") or not os.path.isdir(entity_dir):
+            continue
+        for rec in infer(entity_dir):
+            counts[rec["attribution"]] += 1
+    return counts
+
+
+def main(argv=None):
+    """Dry by default. Writing 166 files should be an explicit act."""
+    argv = list(sys.argv[1:] if argv is None else argv)
+    do_write = "--write" in argv
+    args = [a for a in argv if not a.startswith("--")]
+    root = args[0] if args else DOSSIERS
+
+    total = {"written": 0, "skipped_existing": 0}
+    counts = {a: 0 for a in ATTRIBUTIONS}
+    for name in sorted(os.listdir(root)):
+        entity_dir = os.path.join(root, name)
+        if name.startswith("_") or not os.path.isdir(entity_dir):
+            continue
+        recs = infer(entity_dir)
+        for rec in recs:
+            counts[rec["attribution"]] += 1
+        got = write(recs, entity_dir, dry_run=not do_write)
+        for k in total:
+            total[k] += got[k]
+
+    print("corpus:", root, "" if do_write else "  (DRY RUN — pass --write)")
+    for a in ATTRIBUTIONS:
+        print(f"  {a:16} {counts[a]:5}")
+    print(f"  {'-' * 22}")
+    print(f"  {'would write' if not do_write else 'written':16} "
+          f"{total['written']:5}")
+    print(f"  {'kept existing':16} {total['skipped_existing']:5}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
