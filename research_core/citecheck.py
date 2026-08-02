@@ -85,6 +85,29 @@ def _recorded_urls(entity_dir, names):
     return out
 
 
+def _domain_texts(entity_dir, names):
+    """{snapshot filename: despace()d *untagged-stripped* text}, for fallback use.
+
+    `snapshot_texts` strips HTML tags before despacing, to isolate the prose a
+    quote must appear in verbatim. Domain evidence for the fallback path
+    routinely lives in tag attributes instead — a <link rel="canonical"> href
+    is the common case — which that stripping deletes before it can be
+    matched. This reads the same files without stripping tags, so despace()
+    still folds "https://example.org/x" down to a contiguous "httpsexampleorgx"
+    that a plain domain substring check can find.
+    """
+    snapdir = os.path.join(entity_dir, "snapshots")
+    out = {}
+    for name in names:
+        try:
+            with open(os.path.join(snapdir, name), encoding="utf-8",
+                      errors="ignore") as fh:
+                out[name] = despace(fh.read())
+        except OSError:
+            continue
+    return out
+
+
 def attribution(root):
     """One dict per quoted row: entity, id, url, verdict, snapshot."""
     rows = []
@@ -95,6 +118,7 @@ def attribution(root):
             continue
         texts = snapshot_texts(entity_dir) or {}
         recorded = _recorded_urls(entity_dir, texts)
+        domain_texts = _domain_texts(entity_dir, texts)
 
         with open(ledger, encoding="utf-8", errors="ignore") as fh:
             for row in ledger_quotes(fh.read()):
@@ -108,13 +132,31 @@ def attribution(root):
                     verdict = "EXACT" if hit else "MISATTRIBUTED"
                     snapshot = hit[0] if hit else sorted(named)[0]
                 else:
-                    verdict, snapshot = _fallback(row, holders)
+                    verdict, snapshot = _fallback(row, holders, domain_texts)
                 rows.append({"entity": entity, "id": row["id"],
                              "url": row["url"], "verdict": verdict,
                              "snapshot": snapshot})
     return rows
 
 
-def _fallback(row, holders):
-    """Verdict when no sidecar names the cited URL. Filled in by Task 3."""
+def _fallback(row, holders, texts):
+    """Verdict when no sidecar names the cited URL.
+
+    `texts` here is `_domain_texts`'s output — despace()d but not tag-stripped
+    — because the domain evidence this looks for typically lives in a tag
+    attribute, not in the visible prose `holders` was matched against.
+
+    Domain evidence only: if a snapshot carrying the quote also mentions the
+    cited URL's host, the attribution is at least consistent. It cannot be
+    better than that — two pages on one host are indistinguishable this way, so
+    a same-domain swap reports WEAK. That limitation is the reason sidecars
+    exist, and it is asserted in the tests rather than left implicit.
+    """
+    host = domain_of(row["url"])
+    if not host:
+        return "UNRECORDED", None
+    flat = despace(host)
+    for name in sorted(holders):
+        if flat and flat in texts.get(name, ""):
+            return "WEAK", name
     return "UNRECORDED", None

@@ -137,5 +137,46 @@ class TestExactAndMisattributed(CorpusCase):
         self.assertNotIn("2", self.verdicts())
 
 
+class TestFallbackWithoutSidecars(CorpusCase):
+    def test_domain_evidence_in_the_holding_snapshot_is_weak(self):
+        # No sidecar. The snapshot carrying the quote mentions the cited
+        # domain, so the attribution is consistent — but unproven.
+        self._snapshot("a.html",
+                       "<p>the depot opened in 1913</p>"
+                       "<link rel='canonical' href='https://example.org/x'>")
+        self.assertEqual(self.verdicts()["1"], "WEAK")
+
+    def test_no_domain_evidence_anywhere_is_unrecorded(self):
+        self._snapshot("a.html", "<p>the depot opened in 1913</p>")
+        self.assertEqual(self.verdicts()["1"], "UNRECORDED")
+
+    def test_a_same_domain_swap_is_invisible_without_a_sidecar(self):
+        # Both fixture URLs are on example.org. This asserts the documented
+        # limitation: domain evidence cannot distinguish two pages on one host,
+        # so a swap between them reports WEAK rather than MISATTRIBUTED. If
+        # this ever starts failing, the fallback got stronger — check why
+        # before changing the assertion.
+        self._snapshot("a.html",
+                       "<p>the depot opened in 1913</p>"
+                       "<link rel='canonical' href='https://example.org/x'>")
+        self._snapshot("b.html",
+                       "<p>the works closed in 1987</p>"
+                       "<link rel='canonical' href='https://example.org/y'>")
+        self.write_ledger(self.URL_B, self.URL_A)     # the swap
+        self.assertEqual(self.verdicts()["1"], "WEAK")
+
+    def test_a_cross_domain_swap_is_caught_even_without_a_sidecar(self):
+        self._snapshot("a.html",
+                       "<p>the depot opened in 1913</p>"
+                       "<link rel='canonical' href='https://example.org/x'>")
+        self.write_ledger("https://elsewhere.test/other", self.URL_B)
+        self.assertEqual(self.verdicts()["1"], "UNRECORDED")
+
+    def test_a_sidecar_on_one_snapshot_does_not_force_fallback_on_another(self):
+        self.sidecar("a.html", self.URL_A)
+        self.assertEqual(self.verdicts()["1"], "EXACT")
+        self.assertIn(self.verdicts()["2"], ("WEAK", "UNRECORDED"))
+
+
 if __name__ == "__main__":
     unittest.main()
