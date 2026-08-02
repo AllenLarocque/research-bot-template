@@ -109,30 +109,57 @@ def _domain_texts(entity_dir, names):
 
 
 def attribution(root):
-    """One dict per quoted row: entity, id, url, verdict, snapshot."""
-    rows = []
+    """One dict per quoted row: entity, id, url, verdict, snapshot.
+
+    A citation names a source, and sources are not owned by entities — the
+    same source is routinely cited from several (quoteaudit's GLOBAL verdict
+    describes exactly this). So the index from a recorded URL to the snapshot
+    that captured it is built once, corpus-wide, before any row is judged —
+    not per entity, which would make a citation repointed at another
+    entity's source invisible by construction.
+    """
+    entities = []
     for entity in sorted(os.listdir(root)):
         entity_dir = os.path.join(root, entity)
         ledger = os.path.join(entity_dir, "sources.md")
         if entity.startswith("_") or not os.path.isfile(ledger):
             continue
+        entities.append((entity, entity_dir, ledger))
+
+    # Corpus-wide state, built once: every entity's snapshot text (a quote may
+    # need to be found in a snapshot that belongs to a different entity than
+    # the row citing it), and the index from a recorded URL to who captured it.
+    texts_by_entity = {}
+    domain_texts_by_entity = {}
+    corpus_index = {}          # normalized url -> [(entity, filename), ...]
+    for entity, entity_dir, _ledger in entities:
         texts = snapshot_texts(entity_dir) or {}
-        recorded = _recorded_urls(entity_dir, texts)
-        domain_texts = _domain_texts(entity_dir, texts)
+        texts_by_entity[entity] = texts
+        domain_texts_by_entity[entity] = _domain_texts(entity_dir, texts)
+        for name, url in _recorded_urls(entity_dir, texts).items():
+            corpus_index.setdefault(url, []).append((entity, name))
+
+    rows = []
+    for entity, entity_dir, ledger in entities:
+        domain_texts = domain_texts_by_entity[entity]
 
         with open(ledger, encoding="utf-8", errors="ignore") as fh:
             for row in ledger_quotes(fh.read()):
-                holders = [n for n, t in texts.items() if verbatim(row["quote"], t)]
+                holders = [(e, n) for e, texts in texts_by_entity.items()
+                           for n, t in texts.items()
+                           if verbatim(row["quote"], t)]
                 if not holders:
                     continue          # quoteaudit's MISSING; not ours to judge
                 cited = normalize_url(row["url"])
-                named = [n for n, u in recorded.items() if u == cited]
-                if named:
-                    hit = sorted(set(named) & set(holders))
+                matches = corpus_index.get(cited, [])
+                if matches:
+                    hit = sorted(set(matches) & set(holders))
                     verdict = "EXACT" if hit else "MISATTRIBUTED"
-                    snapshot = hit[0] if hit else sorted(named)[0]
+                    snapshot = hit[0][1] if hit else sorted(matches)[0][1]
                 else:
-                    verdict, snapshot = _fallback(row, holders, domain_texts)
+                    local_holders = [n for e, n in holders if e == entity]
+                    verdict, snapshot = _fallback(row, local_holders,
+                                                   domain_texts)
                 rows.append({"entity": entity, "id": row["id"],
                              "url": row["url"], "verdict": verdict,
                              "snapshot": snapshot})

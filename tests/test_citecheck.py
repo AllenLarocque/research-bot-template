@@ -178,5 +178,85 @@ class TestFallbackWithoutSidecars(CorpusCase):
         self.assertIn(self.verdicts()["2"], ("WEAK", "UNRECORDED"))
 
 
+class TestCorpusWideAttribution(unittest.TestCase):
+    """A cited source may live under a different entity than the row citing it.
+
+    Sources are not owned by entities — the same source is routinely cited from
+    several. An index scoped to the citing entity cannot see a citation
+    repointed at another entity's source, which is precisely the defect this
+    module exists to catch.
+    """
+
+    QUOTE_A = "the depot opened in 1913"
+    QUOTE_B = "the works closed in 1987"
+    URL_A = "https://example.org/gazette-1911"
+    URL_B = "https://example.org/continental-history"
+
+    LEDGER = ("| id | claim | quote | source page | url | tier | status | conf |\n"
+              "|----|-------|-------|-------------|-----|------|--------|------|\n"
+              '| 1 | depot opened | "{quote}" | Gazette | {url} | T2 | sourced | '
+              "high |")
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.root = os.path.join(self.dir, "corpus")
+
+        self.entity_a = os.path.join(self.root, "Ashford_Rail_Corp")
+        self.snaps_a = os.path.join(self.entity_a, "snapshots")
+        os.makedirs(self.snaps_a)
+
+        self.entity_b = os.path.join(self.root, "Bexley_Foundry_Ltd")
+        self.snaps_b = os.path.join(self.entity_b, "snapshots")
+        os.makedirs(self.snaps_b)
+
+        self._snapshot(self.snaps_a, "a.html", f"<p>{self.QUOTE_A}</p>")
+        self._sidecar(self.snaps_a, "a.html", self.URL_A)
+
+        self._snapshot(self.snaps_b, "b.html", f"<p>{self.QUOTE_B}</p>")
+        self._sidecar(self.snaps_b, "b.html", self.URL_B)
+
+        # Each entity's own row correctly cites its own source, by default.
+        self._write_ledger(self.entity_a, self.QUOTE_A, self.URL_A)
+        self._write_ledger(self.entity_b, self.QUOTE_B, self.URL_B)
+
+    def _snapshot(self, snapdir, name, body):
+        with open(os.path.join(snapdir, name), "w") as fh:
+            fh.write(body)
+
+    def _sidecar(self, snapdir, name, url):
+        with open(os.path.join(snapdir, name + ".meta.json"), "w") as fh:
+            json.dump({"url": url, "title": name}, fh)
+
+    def _write_ledger(self, entity_dir, quote, url):
+        text = self.LEDGER.format(quote=quote, url=url)
+        with open(os.path.join(entity_dir, "sources.md"), "w") as fh:
+            fh.write(text)
+
+    def verdicts(self):
+        return {r["entity"]: r for r in attribution(self.root)}
+
+    def test_a_row_citing_another_entitys_source_is_misattributed(self):
+        # Repoint A's row at B's URL. A's quote is real and verbatim in A's own
+        # snapshot, but B's source does not carry it.
+        self._write_ledger(self.entity_a, self.QUOTE_A, self.URL_B)
+        by_entity = self.verdicts()
+        self.assertEqual(by_entity["Ashford_Rail_Corp"]["verdict"], "MISATTRIBUTED")
+
+    def test_a_correctly_cited_row_across_entities_is_exact(self):
+        # A's row cites B's URL, and quotes B's own text -- a legitimate
+        # cross-entity citation. The quote is verbatim in B's snapshot, not A's.
+        self._write_ledger(self.entity_a, self.QUOTE_B, self.URL_B)
+        by_entity = self.verdicts()
+        self.assertEqual(by_entity["Ashford_Rail_Corp"]["verdict"], "EXACT")
+
+    def test_the_reported_snapshot_names_the_cited_source_not_the_holder(self):
+        self._write_ledger(self.entity_a, self.QUOTE_A, self.URL_B)
+        by_entity = self.verdicts()
+        row = by_entity["Ashford_Rail_Corp"]
+        self.assertEqual(row["verdict"], "MISATTRIBUTED")
+        self.assertEqual(row["snapshot"], "b.html")
+
+
 if __name__ == "__main__":
     unittest.main()
