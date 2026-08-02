@@ -297,3 +297,54 @@ class TestSnapshotTexts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestUrlInheritanceIsNarrow(unittest.TestCase):
+    """A blank URL cell means "no citation", not "the one above".
+
+    The older 6-column tables write "(same as #1)" to mean "the previous row's
+    source". The inheritance rule existed for that. But it fired on ANY row
+    without a URL, so a blank cell silently acquired the preceding row's
+    citation — a citation nobody made. citecheck then compared that
+    manufactured URL against the source and reported MISATTRIBUTED.
+
+    An audit of the real corpus on 2026-08-02 found 42 of 73 flagged rows were
+    this, not a defect in the research.
+    """
+
+    HEAD = ("| id | claim | quote | source | url | tier | status | conf |\n"
+            "|----|-------|-------|--------|-----|------|--------|------|\n")
+
+    def rows(self, body):
+        return {r["id"]: r["url"] for r in ledger_quotes(self.HEAD + body)}
+
+    def test_an_explicit_url_is_used(self):
+        got = self.rows('| 1 | c | "a quoted sentence here" | S | '
+                        "https://example.org/a | T2 | sourced | high |")
+        self.assertEqual(got["1"], "https://example.org/a")
+
+    def test_a_same_as_cell_inherits_the_previous_url(self):
+        got = self.rows(
+            '| 1 | c | "the first quoted sentence" | S | https://example.org/a | T2 | sourced | high |\n'
+            '| 2 | c | "the second quoted sentence" | (same as #1) | (same) | T2 | sourced | high |')
+        self.assertEqual(got["2"], "https://example.org/a")
+
+    def test_a_blank_url_cell_inherits_nothing(self):
+        got = self.rows(
+            '| 1 | c | "the first quoted sentence" | S | https://example.org/a | T2 | sourced | high |\n'
+            '| 2 | c | "the second quoted sentence" | Alberni Valley News |  | T2 | sourced | high |')
+        self.assertEqual(got["2"], "")
+
+    def test_a_dash_url_cell_inherits_nothing(self):
+        got = self.rows(
+            '| 1 | c | "the first quoted sentence" | S | https://example.org/a | T2 | sourced | high |\n'
+            '| 2 | c | "the second quoted sentence" | S | — | T2 | sourced | high |')
+        self.assertEqual(got["2"], "")
+
+    def test_inheritance_reaches_past_a_blank_row(self):
+        # "(same)" means the last source actually cited, not the row above.
+        got = self.rows(
+            '| 1 | c | "the first quoted sentence" | S | https://example.org/a | T2 | sourced | high |\n'
+            '| 2 | c | "the second quoted sentence" | N |  | T2 | sourced | high |\n'
+            '| 3 | c | "the third quoted sentence" | (same) | (same) | T2 | sourced | high |')
+        self.assertEqual(got["3"], "https://example.org/a")

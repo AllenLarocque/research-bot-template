@@ -67,9 +67,15 @@ def ledger_quotes(md):
     Yields dicts of id, quote, url, retracted. Handles both the 8-column
     ledger and the older 6-column table that superseded ledgers retain below
     them: the quote is at cell index 2 in both, but the URL column is not, so
-    take the first URL-looking cell after the quote. Rows whose source cell
-    says "(same)" inherit the previous row's URL, which is what that notation
-    means.
+    take the first URL-looking cell after the quote.
+
+    Inheritance is deliberately narrow. A cell saying "(same as #1)" inherits
+    the last cited URL, which is what that notation means. A **blank** cell
+    inherits nothing: it means the row records no citation. An earlier version
+    inherited whenever no URL was found, so a blank cell silently acquired the
+    preceding row's source — a citation nobody made — and anything comparing
+    that URL against the text then reported a misattribution that did not
+    exist. An audit of a real corpus found 42 of 73 such reports were this.
     """
     out = []
     last_url = ""
@@ -86,8 +92,12 @@ def ledger_quotes(md):
         if cells[0].lower() in ("id", "#"):               # header row
             continue
         found = _URL.search(" ".join(cells[3:]))
-        url = found.group(0) if found else last_url
-        last_url = url
+        if found:
+            url = last_url = found.group(0)
+        elif any(c.lower().startswith("(same") for c in cells[3:]):
+            url = last_url           # the notation those tables use
+        else:
+            url = ""                 # no citation, not the one above
         if cells[2] in _EMPTY:
             continue
         retracted = "RETRACTED" in joined.upper()
