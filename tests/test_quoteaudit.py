@@ -21,7 +21,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.quoteaudit import (
     despace, verbatim, ledger_quotes, classify, coverage,
-    snapshot_text, audit,
+    snapshot_text, snapshot_texts, audit,
 )
 
 # An 8-column ledger and the older 6-column table that superseded ledgers keep
@@ -249,6 +249,50 @@ class TestAudit(unittest.TestCase):
         row = [r for r in audit(self.root) if r["id"] == "1"][0]
         self.assertEqual(row["entity"], "Mill")
         self.assertEqual(row["coverage"], 1.0)
+
+
+class TestSnapshotTexts(unittest.TestCase):
+    def setUp(self):
+        self.root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.root)
+        self.snapdir = os.path.join(self.root, "snapshots")
+        os.makedirs(self.snapdir)
+
+    def _write(self, name, body):
+        with open(os.path.join(self.snapdir, name), "w") as fh:
+            fh.write(body)
+
+    def test_returns_none_when_no_snapshots_directory(self):
+        empty = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, empty)
+        self.assertIsNone(snapshot_texts(empty))
+
+    def test_keys_are_filenames_and_values_are_that_file_only(self):
+        self._write("a.html", "<p>the depot opened in 1913</p>")
+        self._write("b.html", "<p>the works closed in 1987</p>")
+        got = snapshot_texts(self.root)
+        self.assertEqual(sorted(got), ["a.html", "b.html"])
+        self.assertIn(despace("the depot opened in 1913"), got["a.html"])
+        self.assertNotIn(despace("the depot opened in 1913"), got["b.html"])
+
+    def test_sidecars_are_not_snapshots(self):
+        # A .meta.json in snapshots/ describes a capture; it is not one. Left
+        # in, its JSON would be despaced into the body and a quote could
+        # appear to verify against a file that is not a capture at all.
+        self._write("a.html", "<p>the depot opened in 1913</p>")
+        self._write("a.html.meta.json",
+                    '{"url": "https://example.org/x", "title": "a distinctive title"}')
+        got = snapshot_texts(self.root)
+        self.assertEqual(sorted(got), ["a.html"])
+        self.assertNotIn(despace("a distinctive title"),
+                         snapshot_text(self.root))
+
+    def test_snapshot_text_still_joins_every_snapshot(self):
+        self._write("a.html", "<p>the depot opened in 1913</p>")
+        self._write("b.html", "<p>the works closed in 1987</p>")
+        joined = snapshot_text(self.root)
+        self.assertIn(despace("the depot opened in 1913"), joined)
+        self.assertIn(despace("the works closed in 1987"), joined)
 
 
 if __name__ == "__main__":

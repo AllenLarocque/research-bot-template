@@ -127,19 +127,25 @@ def coverage(quote, body):
     return sum(1 for w in content if w in body) / len(content)
 
 
-def snapshot_text(entity_dir):
-    """Despace()d text of every snapshot captured for one entity.
+# A sidecar describes a capture; it is not one. Reading it as snapshot content
+# would let a quote verify against a file that was never fetched.
+SIDECAR_SUFFIX = ".meta.json"
 
-    None when the entity captured nothing — which is a different finding from
-    "captured something that does not contain the quote", and must not be
-    collapsed into it.
+
+def snapshot_texts(entity_dir):
+    """{filename: despace()d text} for one entity's snapshots.
+
+    None when the entity captured nothing — a different finding from
+    "captured something that does not contain the quote".
     """
     snapdir = os.path.join(entity_dir, "snapshots")
     if not os.path.isdir(snapdir):
         return None
-    chunks = []
+    out = {}
     for root, _dirs, files in os.walk(snapdir):
         for name in sorted(files):
+            if name.endswith(SIDECAR_SUFFIX):
+                continue
             try:
                 with open(os.path.join(root, name), encoding="utf-8",
                           errors="ignore") as fh:
@@ -148,8 +154,14 @@ def snapshot_text(entity_dir):
                 continue
             raw = _SCRIPTISH.sub(" ", raw)
             raw = _ANY_TAG.sub(" ", raw)
-            chunks.append(despace(html.unescape(raw)))
-    return " ".join(chunks) if chunks else None
+            out[name] = despace(html.unescape(raw))
+    return out or None
+
+
+def snapshot_text(entity_dir):
+    """Despace()d text of every snapshot captured for one entity, pooled."""
+    texts = snapshot_texts(entity_dir)
+    return " ".join(texts[k] for k in sorted(texts)) if texts else None
 
 
 def audit(root):
