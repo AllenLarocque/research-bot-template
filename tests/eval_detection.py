@@ -24,6 +24,7 @@ BASELINE = os.path.join(HERE, "eval_baseline.json")
 
 from research_core import mutate                       # noqa: E402
 from research_core.anchorcheck import missing_anchors   # noqa: E402
+from research_core.citecheck import attribution         # noqa: E402
 from research_core.ledger import parse_ledger           # noqa: E402
 from research_core.quoteaudit import audit              # noqa: E402
 from research_core.weakcites import is_weak             # noqa: E402
@@ -65,6 +66,11 @@ def _detect(root, entity, row_id):
     for r in audit(root):
         if r["entity"] == entity and r["id"] == row_id and r["verdict"] == "MISSING":
             hits.append("quoteaudit")
+
+    for r in attribution(root):
+        if r["entity"] == entity and r["id"] == row_id and \
+                r["verdict"] == "MISATTRIBUTED":
+            hits.append("citecheck")
 
     row = next((r for r in _rows(root, entity) if r["id"] == row_id), None)
     if row is None:
