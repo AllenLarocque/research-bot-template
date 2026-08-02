@@ -10,6 +10,7 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from research_core.citecheck import attribution
 from research_core.quoteaudit import audit
 
 CORPUS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -35,6 +36,16 @@ class TestCorpusIsClean(unittest.TestCase):
 
     def test_more_than_one_entity(self):
         self.assertGreaterEqual(len({r["entity"] for r in self.rows}), 2)
+
+
+class TestCorpusAttribution(unittest.TestCase):
+    def test_every_clean_row_is_exactly_attributed(self):
+        bad = [(r["entity"], r["id"], r["verdict"])
+               for r in attribution(CORPUS) if r["verdict"] != "EXACT"]
+        self.assertEqual(bad, [], f"rows without exact attribution: {bad}")
+
+    def test_attribution_covers_every_row(self):
+        self.assertEqual(len(attribution(CORPUS)), len(audit(CORPUS)))
 
 
 if __name__ == "__main__":
