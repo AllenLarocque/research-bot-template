@@ -162,7 +162,8 @@ def attribution(root):
                                                    domain_texts)
                 rows.append({"entity": entity, "id": row["id"],
                              "url": row["url"], "verdict": verdict,
-                             "snapshot": snapshot})
+                             "snapshot": snapshot,
+                             "retracted": row["retracted"]})
     return rows
 
 

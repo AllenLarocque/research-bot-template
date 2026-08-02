@@ -260,3 +260,42 @@ class TestCorpusWideAttribution(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRetractedIsCarried(CorpusCase):
+    """A row marked RETRACTED is a settled, deliberately visible error.
+
+    ledger_quotes already computes the flag. citecheck dropped it, so a
+    consumer could not tell a live finding from one adjudicated months ago and
+    left in place on purpose. Carrying it lets the consumer filter; citecheck
+    still reports what it observes rather than deciding what matters.
+    """
+
+    def retract_row_one(self):
+        path = os.path.join(self.entity, "sources.md")
+        text = open(path).read().replace(
+            "| 1 | depot opened |",
+            "| 1 | **RETRACTED — quote not in source** depot opened |")
+        open(path, "w").write(text)
+
+    def test_records_carry_the_flag(self):
+        self.sidecar("a.html", self.URL_A)
+        self.sidecar("b.html", self.URL_B)
+        self.assertEqual({r["id"]: r["retracted"] for r in attribution(self.root)},
+                         {"1": False, "2": False})
+
+    def test_a_retracted_row_is_marked(self):
+        self.sidecar("a.html", self.URL_A)
+        self.sidecar("b.html", self.URL_B)
+        self.retract_row_one()
+        by_id = {r["id"]: r["retracted"] for r in attribution(self.root)}
+        self.assertTrue(by_id["1"])
+        self.assertFalse(by_id["2"])
+
+    def test_a_retracted_row_is_still_judged(self):
+        # Carry the flag, do not silently drop the row: a consumer that wants
+        # settled rows included must be able to have them.
+        self.sidecar("a.html", self.URL_A)
+        self.sidecar("b.html", self.URL_B)
+        self.retract_row_one()
+        self.assertIn("1", {r["id"] for r in attribution(self.root)})
