@@ -29,6 +29,7 @@ provenance record.
 """
 import hashlib
 import html
+import json
 import os
 import re
 from datetime import datetime, timezone
@@ -101,3 +102,26 @@ def infer(entity_dir):
             rec["candidate_urls"] = urls
         out.append(rec)
     return out
+
+
+def write(records, entity_dir, dry_run=False):
+    """Persist inferred records. Returns {"written", "skipped_existing"}.
+
+    An existing sidecar is never overwritten: one written at capture time is
+    stronger evidence than anything inferable afterwards, and replacing it
+    would downgrade the record while the coverage count rose.
+    """
+    snapdir = os.path.join(entity_dir, "snapshots")
+    counts = {"written": 0, "skipped_existing": 0}
+    for rec in records:
+        path = os.path.join(snapdir, rec["snapshot"] + SIDECAR_SUFFIX)
+        if os.path.exists(path):
+            counts["skipped_existing"] += 1
+            continue
+        counts["written"] += 1
+        if dry_run:
+            continue
+        body = {k: v for k, v in rec.items() if k != "snapshot"}
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(body, fh, indent=1, sort_keys=True)
+    return counts

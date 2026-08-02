@@ -11,6 +11,7 @@ appear there, or a guess gets promoted to a fact by code that is behaving
 correctly.
 """
 import hashlib
+import json
 import os
 import shutil
 import sys
@@ -18,7 +19,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from research_core.backfill_sidecars import infer
+from research_core.backfill_sidecars import infer, write
 
 URL_A = "https://example.org/gazette-1911"
 URL_B = "https://elsewhere.test/continental-history"
@@ -143,6 +144,48 @@ class TestDegradesQuietly(InferCase):
         self.snapshot("a.html", '<a href="%s">x</a>' % URL_A)
         self.snapshot("a.html.meta.json", '{"url": "%s"}' % URL_A)
         self.assertEqual([r["snapshot"] for r in infer(self.entity)], ["a.html"])
+
+
+class TestWrite(InferCase):
+    def setUp(self):
+        super().setUp()
+        self.snapshot("a.html", '<a href="%s">x</a>' % URL_A)
+
+    def sidecar_path(self):
+        return os.path.join(self.snaps, "a.html.meta.json")
+
+    def test_writes_a_sidecar_beside_the_snapshot(self):
+        counts = write(infer(self.entity), self.entity)
+        self.assertEqual(counts["written"], 1)
+        self.assertTrue(os.path.isfile(self.sidecar_path()))
+
+    def test_dry_run_writes_nothing_but_still_counts(self):
+        counts = write(infer(self.entity), self.entity, dry_run=True)
+        self.assertEqual(counts["written"], 1)
+        self.assertFalse(os.path.isfile(self.sidecar_path()))
+
+    def test_an_existing_sidecar_is_never_overwritten(self):
+        # One written at capture time is better evidence than any inference.
+        # Clobbering it would downgrade the record while the coverage number
+        # went up.
+        original = '{"url": "https://captured.test/real", "title": "t"}'
+        with open(self.sidecar_path(), "w") as fh:
+            fh.write(original)
+        counts = write(infer(self.entity), self.entity)
+        self.assertEqual(counts, {"written": 0, "skipped_existing": 1})
+        self.assertEqual(open(self.sidecar_path()).read(), original)
+
+    def test_written_json_round_trips(self):
+        write(infer(self.entity), self.entity)
+        with open(self.sidecar_path()) as fh:
+            self.assertEqual(json.load(fh)["url"], URL_A)
+
+    def test_the_snapshot_key_is_not_persisted(self):
+        # It names the file the sidecar sits beside; storing it invites the
+        # two to disagree after a rename.
+        write(infer(self.entity), self.entity)
+        with open(self.sidecar_path()) as fh:
+            self.assertNotIn("snapshot", json.load(fh))
 
 
 if __name__ == "__main__":
