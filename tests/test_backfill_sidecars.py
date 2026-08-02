@@ -22,6 +22,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.backfill_sidecars import ATTRIBUTIONS, infer, main, summarise, write
+from research_core.quoteaudit import SIDECAR_SUFFIX
 
 URL_A = "https://example.org/gazette-1911"
 URL_B = "https://elsewhere.test/continental-history"
@@ -242,6 +243,50 @@ class TestMainIsDryByDefault(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             main([self.root, "--write"])
         self.assertTrue(os.path.isfile(self.sidecar))
+
+
+class TestAgainstKnownGroundTruth(unittest.TestCase):
+    """Re-derive sidecars whose correct answers are already known.
+
+    tests/fixtures/corpus/ carries hand-written sidecars. Stripping them from a
+    copy and re-inferring asks whether this module can recover attribution that
+    someone else established — which is a different and stronger question than
+    whether it agrees with fixtures written alongside it.
+    """
+
+    FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "fixtures", "corpus")
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.root = os.path.join(self.dir, "corpus")
+        shutil.copytree(self.FIXTURES, self.root)
+        self.truth = {}
+        for entity in sorted(os.listdir(self.root)):
+            snaps = os.path.join(self.root, entity, "snapshots")
+            for name in sorted(os.listdir(snaps)):
+                if not name.endswith(SIDECAR_SUFFIX):
+                    continue
+                path = os.path.join(snaps, name)
+                with open(path) as fh:
+                    self.truth[(entity, name)] = json.load(fh)["url"]
+                os.remove(path)
+
+    def test_the_fixture_corpus_actually_had_sidecars_to_strip(self):
+        # Without this, every assertion below passes over an empty set.
+        self.assertGreaterEqual(len(self.truth), 2)
+
+    def test_recovered_urls_match_the_originals_where_recovered(self):
+        wrong = []
+        for entity in sorted(os.listdir(self.root)):
+            for rec in infer(os.path.join(self.root, entity)):
+                key = (entity, rec["snapshot"] + SIDECAR_SUFFIX)
+                if "url" in rec and key in self.truth:
+                    if rec["url"] != self.truth[key]:
+                        wrong.append((key, rec["url"], self.truth[key]))
+        self.assertEqual(wrong, [], f"inferred a different URL than the "
+                                    f"recorded one: {wrong}")
 
 
 if __name__ == "__main__":
