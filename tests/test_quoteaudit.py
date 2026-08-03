@@ -351,3 +351,72 @@ class TestUrlInheritanceIsNarrow(unittest.TestCase):
             '| 2 | c | "the second quoted sentence" | N |  | T2 | sourced | high |\n'
             '| 3 | c | "the third quoted sentence" | (same) | (same) | T2 | sourced | high |')
         self.assertEqual(got["3"], "https://example.org/a")
+
+
+class TestQuotesContainingQuotes(unittest.TestCase):
+    """A quotation with an inner quotation is one quote, not two fragments.
+
+    The span pattern's character class stopped at the first inner mark, so
+    'The major "pull factor" was the promise of work' became two fragments —
+    neither of which verifies against the source. Two corpus rows sat
+    unresolvable for a day because of it, and it hid two more defects from
+    citecheck entirely.
+    """
+
+    HEAD = ("| id | claim | quote | source | url | tier | status | conf |\n"
+            "|----|-------|-------|--------|-----|------|--------|------|\n")
+
+    def quotes(self, cell):
+        rows = ledger_quotes(self.HEAD + f"| 1 | c | {cell} | S | "
+                             "https://example.org/a | T2 | sourced | high |")
+        return [r["quote"] for r in rows]
+
+    def test_an_inner_quotation_does_not_split_the_span(self):
+        got = self.quotes('"The major “pull factor” was the promise of work"')
+        self.assertEqual(len(got), 1, got)
+        self.assertIn("pull factor", got[0])
+
+    def test_a_straight_inner_quotation_does_not_split_it_either(self):
+        got = self.quotes('"The major "pull factor" was the promise of work"')
+        self.assertEqual(len(got), 1, got)
+        self.assertIn("pull factor", got[0])
+
+    def test_two_separate_quotations_in_one_cell_are_still_two(self):
+        got = self.quotes('"the camp opened in 1936" / "the river flows west"')
+        self.assertEqual(got, ["the camp opened in 1936", "the river flows west"])
+
+    def test_a_plain_quotation_is_unchanged(self):
+        self.assertEqual(self.quotes('"the depot opened in 1913"'),
+                         ["the depot opened in 1913"])
+
+
+class TestAsBackReference(unittest.TestCase):
+    """"(as #N)" cites row N, and the corpus uses it 89 times.
+
+    Narrowing inheritance to "(same)" alone left every one of these reporting
+    no URL. They were then read as citing nothing at all, and a brief was
+    written telling an agent to demote them — which would have stripped
+    citations off 66 sourced rows.
+    """
+
+    HEAD = ("| id | claim | quote | source | url | tier | status | conf |\n"
+            "|----|-------|-------|--------|-----|------|--------|------|\n")
+
+    BODY = ('| 1 | c | "the first quoted sentence" | S | https://example.org/one | T2 | sourced | high |\n'
+            '| 2 | c | "the second quoted sentence" | T | https://example.org/two | T2 | sourced | high |\n'
+            '| 3 | c | "the third quoted sentence" | (as #1) | (as #1) | T2 | sourced | high |\n'
+            '| 4 | c | "the fourth quoted sentence" | (as #2) | (as #2) | T2 | sourced | high |')
+
+    def urls(self):
+        return {r["id"]: r["url"] for r in ledger_quotes(self.HEAD + self.BODY)}
+
+    def test_as_n_resolves_to_that_row_not_the_previous_one(self):
+        # The distinction matters: row 4 says (as #2), and the row above it is 3.
+        self.assertEqual(self.urls()["4"], "https://example.org/two")
+
+    def test_as_n_pointing_at_the_first_row(self):
+        self.assertEqual(self.urls()["3"], "https://example.org/one")
+
+    def test_an_unresolvable_reference_yields_no_url_rather_than_a_wrong_one(self):
+        rows = ledger_quotes(self.HEAD + self.BODY.replace("(as #2)", "(as #9)"))
+        self.assertEqual({r["id"]: r["url"] for r in rows}["4"], "")

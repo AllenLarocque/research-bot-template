@@ -31,7 +31,14 @@ _ANY_TAG = re.compile(r"<[^>]+>")
 # Straight or curly quoted spans. The floor keeps stray inch-marks and
 # one-word emphasis out of the audit.
 _QUOTED = re.compile(r'["“]([^"“”]{10,})["”]')
+# A cell that is a single quotation from its first mark to its last: the span
+# between them may itself contain quotation marks. Mark-to-mark matching stops
+# at the first inner one and splits one quote into fragments that verify
+# against nothing.
+_WHOLE_CELL_QUOTE = re.compile(r'^["“](.{10,})["”]$', re.S)
 _URL = re.compile(r"https?://\S+")
+# "(as #4)" / "(as #1b)" — a back-reference to another row in the same table.
+_AS_REF = re.compile(r"\(as #([0-9a-z]+)\)", re.I)
 _ELLIPSIS = re.compile(r"\.\.\.|…|\[\.\.\.\]")
 _EMPTY = ("", "-", "—", "–", "n/a", "N/A", "(same)")
 
@@ -61,6 +68,31 @@ def verbatim(quote, body):
     return bool(parts) and all(p in body for p in parts)
 
 
+
+def _quoted_spans(cell):
+    """The quotations in a ledger cell, treating inner marks correctly.
+
+    Two shapes share a cell: several quotations separated by "/" or ";", and a
+    single quotation that itself contains quotation marks. Mark-to-mark
+    matching reads the second as the first and yields fragments that verify
+    against nothing.
+
+    They are told apart by their edges. Separate quotations abut their marks —
+    `"a" / "b"` gives `a` and `b`. A split quotation leaves the surrounding
+    prose behind, so a fragment begins or ends with a space: `The major "pull
+    factor" was ...` gives `The major ` and ` was ...`. Whitespace at a
+    fragment edge therefore means the cell was cut, not that it held two
+    quotations.
+    """
+    cell = cell.strip()
+    parts = _QUOTED.findall(cell)
+    if parts and any(p != p.strip() for p in parts):
+        whole = _WHOLE_CELL_QUOTE.match(cell)
+        if whole:
+            return [whole.group(1)]
+    return parts
+
+
 def ledger_quotes(md):
     """Every quoted span in a ledger's markdown tables.
 
@@ -79,6 +111,7 @@ def ledger_quotes(md):
     """
     out = []
     last_url = ""
+    by_id = {}
     for line in md.splitlines():
         stripped = line.strip()
         if not stripped.startswith("|"):
@@ -92,8 +125,13 @@ def ledger_quotes(md):
         if cells[0].lower() in ("id", "#"):               # header row
             continue
         found = _URL.search(" ".join(cells[3:]))
+        ref = _AS_REF.search(" ".join(cells[3:]))
         if found:
-            url = last_url = found.group(0)
+            url = last_url = by_id[cells[0]] = found.group(0)
+        elif ref:
+            # "(as #4)" cites row 4 specifically, which is often not the row
+            # above. Resolving it to last_url would attribute the wrong source.
+            url = by_id.get(ref.group(1), "")
         elif any(c.lower().startswith("(same") for c in cells[3:]):
             url = last_url           # the notation those tables use
         else:
@@ -101,7 +139,7 @@ def ledger_quotes(md):
         if cells[2] in _EMPTY:
             continue
         retracted = "RETRACTED" in joined.upper()
-        for quote in _QUOTED.findall(cells[2]):
+        for quote in _quoted_spans(cells[2]):
             out.append({"id": cells[0], "quote": quote, "url": url,
                         "retracted": retracted})
     return out
