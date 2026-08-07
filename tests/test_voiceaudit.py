@@ -47,6 +47,24 @@ class TestErrorPatterns(unittest.TestCase):
         self.assertIn("progress-note",
                       names(scan("the first source on this page that is not Wikipedia")))
 
+    def test_progress_note_catches_account_and_source_not_only_publisher(self):
+        # Pass 1 of the cleanup found the same announcement written as "a second
+        # account" and "a THIRD SOURCE" three times more often than as "a second
+        # publisher", all of it sailing past the original pattern.
+        for phrase in ("a second publisher", "A third account of the year",
+                       "No second source found names it", "another account"):
+            self.assertIn("progress-note", names(scan(phrase)), phrase)
+
+    def test_progress_note_leaves_ordinary_counting_alone(self):
+        # The widened alternation is two words, not one: "source" on its own
+        # must not fire, or every page describing a river fires.
+        self.assertEqual([f for f in scan("the second largest mill, and its "
+                                          "source of logs") if f.severity == ERROR], [])
+
+    def test_tool_names(self):
+        self.assertIn("names-tool",
+                      names(scan("a violation that predtypes.py could not see")))
+
     def test_ordinary_prose_survives_the_error_set(self):
         # A checker that fires on normal sentences gets switched off.
         clean = ("The Somass Sawmill opened in 1935 and was renamed in 1953 "
@@ -60,6 +78,12 @@ class TestWarnPatterns(unittest.TestCase):
 
     def test_page_self(self):
         self.assertIn("page-self", names(scan("This page is about the man.")))
+
+    def test_page_self_catches_both_numbers_of_no_page_here(self):
+        # One letter apart, and for one pass the plural was the difference
+        # between a sentence being deleted and being left in place.
+        self.assertIn("page-self", names(scan("The League has no page here")))
+        self.assertIn("page-self", names(scan("Gray and Sturdy have no pages here")))
 
     def test_rests_on(self):
         self.assertIn("rests-on",

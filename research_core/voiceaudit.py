@@ -55,14 +55,25 @@ PATTERNS = [
     ("names-apparatus", ERROR,
      r"\brelationship rows?\b|\bSource pages?\b|\bthe audit queue\b"
      r"|\bverification counters?\b|\bthe claim ledger\b"),
+    # "publisher" was the whole alternation until pass 1 of the cleanup showed
+    # the same announcement written 33 times as "a second ACCOUNT" or "a THIRD
+    # SOURCE" and going unflagged -- three times more often than the wording the
+    # pattern knew. All 33 were checked in context before this widened: every
+    # one is an announcement of what the research turned up, and none is a page
+    # saying something like "a second source of pulp logs".
     ("progress-note", ERROR,
      r"\bfirst source on this page\b|\balready in the corpus\b"
-     r"|\b(?:second|third|fourth|another) publisher\b"
+     r"|\b(?:second|third|fourth|another) (?:account|source|publisher)\b"
      r"|\bnew here\b|\bthis pass\b|\ba later pass\b"),
+    # No page has a legitimate reason to name a script. Two in the corpus when
+    # this was added, both tools of this project's own.
+    ("names-tool", ERROR, r"\b\w+\.py\b"),
 
+    # `no pages? here`, not `no page here`: the singular was flagged and deleted
+    # on one page the same day the plural survived on another, one letter apart.
     ("page-self", WARN,
      r"\bthis page\b|\bthe page\b|\bthis article\b|\bthis entity\b"
-     r"|\bno page here\b|\bon this record\b"),
+     r"|\bno pages? here\b|\bon this record\b"),
     ("rests-on", WARN,
      r"\brests? on\b|\bsingle publisher\b|\bone publisher\b"
      r"|\bsingle (?:tertiary )?source\b"),
