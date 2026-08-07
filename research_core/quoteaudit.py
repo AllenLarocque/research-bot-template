@@ -45,6 +45,9 @@ _EMPTY = ("", "-", "—", "–", "n/a", "N/A", "(same)")
 # Below this, a fragment matches almost any body by accident.
 MIN_FRAGMENT = 10
 
+_OPENING = '"“'
+_CLOSING = '"”'
+
 
 def despace(s):
     """Normalised text with every space removed.
@@ -58,15 +61,64 @@ def despace(s):
     return norm(s).replace(" ", "")
 
 
+def _fragments(quote):
+    """The ellipsis-separated parts of `quote` long enough to mean anything."""
+    return [p for p in (despace(p) for p in _ELLIPSIS.split(quote))
+            if len(p) >= MIN_FRAGMENT]
+
+
+def measurable(quote):
+    """Is `quote` long enough for its presence to be evidence of anything?
+
+    Below MIN_FRAGMENT a string matches almost any body by accident, so
+    verbatim() drops short fragments — and a quote with nothing left after that
+    drop comes back False, which is indistinguishable from absent. It is not
+    the same claim. "Huu-ay-aht" despaces to eight characters against a floor
+    of ten, and was reported MISSING corpus-wide while sitting verbatim in the
+    snapshot its row names.
+
+    Callers that report a verdict must ask this first. NOSNAP already says
+    "cannot be measured" for the other reason; this is the same distinction on
+    the quote's side rather than the corpus's.
+    """
+    return bool(_fragments(quote))
+
+
 def verbatim(quote, body):
     """Is every ellipsis-separated part of `quote` present in `body`?
 
     `body` must already be despace()d.
+
+    False from this function means "not found as asked", which for a quote
+    below the fragment floor means "could not be asked at all" — see
+    measurable(), and ask it first if the answer is going to be shown to
+    anyone.
     """
-    parts = [despace(p) for p in _ELLIPSIS.split(quote)]
-    parts = [p for p in parts if len(p) >= MIN_FRAGMENT]
+    parts = _fragments(quote)
     return bool(parts) and all(p in body for p in parts)
 
+
+
+def _outer_pair_skipped(cell):
+    """Did mark-to-mark matching take an inner pair and drop the cell's own?
+
+    True only when the cell is wrapped in one style of mark and carries the
+    OTHER style inside it — straight outside and curly within, or the reverse.
+    That is the shape where the outer pair cannot be matched at all, because
+    the character class between the marks stops at the inner one.
+
+    Same-style inner marks deliberately do not count. An inch mark (`3/8"`) is
+    a straight mark inside a straight-quoted span, and cells like
+    `"… (3/8" basis)"; "… (3/8" basis)"; "…"` hold three quotations, not one.
+    Treating those as nested merges three real quotes into one string that
+    matches no source.
+    """
+    if len(cell) < 2 or cell[0] not in _OPENING or cell[-1] not in _CLOSING:
+        return False
+    inner = cell[1:-1]
+    if cell[0] == '"':
+        return "“" in inner or "”" in inner
+    return '"' in inner
 
 
 def _quoted_spans(cell):
@@ -83,10 +135,25 @@ def _quoted_spans(cell):
     factor" was ...` gives `The major ` and ` was ...`. Whitespace at a
     fragment edge therefore means the cell was cut, not that it held two
     quotations.
+
+    That edge test misses one shape: a single quotation whose inner marks wrap
+    a tidy term with no surrounding space, `"… the record calls “Huu-ay-aht”,
+    signed …"`. The character class cannot cross the inner mark, so the outer
+    quotation is skipped and the inner TERM is audited in its place — which is
+    how a quote sitting verbatim in its own snapshot came to be reported
+    MISSING corpus-wide on Alberni_Pacific_Division.
+
+    `_outer_pair_skipped` is the second entry to the same fallback, and it is
+    deliberately narrow. A first attempt asked instead whether the text between
+    matches was separator-only, which reads well and is wrong: quoted text
+    containing an inch mark (`3/8"`) truncates every fragment, leaving real
+    text between matches in cells that genuinely hold three quotations. That
+    rewrite turned one false MISSING into three. Adding a condition cannot
+    regress what the edge test already got right; replacing it can.
     """
     cell = cell.strip()
     parts = _QUOTED.findall(cell)
-    if parts and any(p != p.strip() for p in parts):
+    if parts and (any(p != p.strip() for p in parts) or _outer_pair_skipped(cell)):
         whole = _WHOLE_CELL_QUOTE.match(cell)
         if whole:
             return [whole.group(1)]
@@ -146,14 +213,20 @@ def ledger_quotes(md):
 
 
 def classify(quote, local, corpus):
-    """LOCAL, GLOBAL, MISSING or NOSNAP for one quote.
+    """LOCAL, GLOBAL, MISSING, NOSNAP or UNMEASURED for one quote.
 
     `local` is this dossier's despace()d snapshot text, or None when it
     captured nothing; `corpus` is every dossier's, concatenated. GLOBAL means
     the evidence exists but is filed under a different entity.
+
+    UNMEASURED means the quote is too short to check either way — see
+    measurable(). It is deliberately not MISSING: MISSING is a statement about
+    the corpus, and there is nothing here to state.
     """
     if local is None:
         return "NOSNAP"
+    if not measurable(quote):
+        return "UNMEASURED"
     if verbatim(quote, local):
         return "LOCAL"
     if verbatim(quote, corpus):

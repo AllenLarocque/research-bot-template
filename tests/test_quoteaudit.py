@@ -23,6 +23,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.quoteaudit import (
+    _quoted_spans, measurable,
     despace, verbatim, ledger_quotes, classify, coverage,
     snapshot_text, snapshot_texts, audit,
 )
@@ -147,6 +148,84 @@ class TestClassify(unittest.TestCase):
         self.assertEqual(
             classify(self.QUOTE, despace("unrelated"), despace("also unrelated")),
             "MISSING")
+
+
+class TestQuotedSpansWholeCell(unittest.TestCase):
+    """A cell holding ONE quotation that itself contains quotation marks.
+
+    Found on Alberni_Pacific_Division row 14, which reported MISSING for a
+    quote that is verbatim in the snapshot the row names. Mark-to-mark matching
+    skipped the outer quotation entirely -- the character class stops at the
+    first inner mark -- and matched only the inner term, so the audit compared
+    the wrong string against the source.
+    """
+
+    CELL = ('"The Nation, which the record calls \u201cHuu-ay-aht\u201d, '
+            'signed the agreement in 2011"')
+
+    def test_keeps_the_outer_quotation_not_the_inner_term(self):
+        self.assertEqual(
+            _quoted_spans(self.CELL),
+            ["The Nation, which the record calls \u201cHuu-ay-aht\u201d, "
+             "signed the agreement in 2011"])
+
+    def test_inch_marks_inside_quotations_do_not_merge_the_cell(self):
+        # Heffley_Creek row: three quotations, and the quoted text itself
+        # contains inch marks (3/8"). Mark-to-mark matching truncates each
+        # fragment at the inch mark, so the text BETWEEN matches is not
+        # separator-only -- but the cell still holds three quotations, not one.
+        cell = ('"producing 180 million square feet (3/8" basis)"; '
+                '"28 million square feet (3/8" basis)"; '
+                '"6275 Old Highway 5, Kamloops, BC"')
+        self.assertEqual(len(_quoted_spans(cell)), 3)
+
+    def test_a_semicolon_joined_pair_stays_two_quotations(self):
+        # Kruger row: two quotations joined by "; ", with prose between them.
+        cell = ('"publication papers, lumber and other wood products\u2026"; '
+                'Kruger release adds "tissue products \u2026 pulp \u2026"')
+        self.assertEqual(len(_quoted_spans(cell)), 2)
+
+    def test_separate_quotations_are_still_split(self):
+        cell = '"the camp opened in 1936" / "the river flows west here"'
+        self.assertEqual(_quoted_spans(cell),
+                         ["the camp opened in 1936", "the river flows west here"])
+
+    def test_a_split_quotation_is_still_rejoined(self):
+        # The shape the edge-whitespace guard was written for: prose left
+        # outside the inner marks, so the fragments carry edge spaces.
+        cell = '"The major "pull factor" was the wages on offer"'
+        self.assertEqual(_quoted_spans(cell),
+                         ['The major "pull factor" was the wages on offer'])
+
+
+class TestMeasurable(unittest.TestCase):
+    """"Too short to measure" and "absent" must not look alike.
+
+    despace() drops the hyphens from "Huu-ay-aht", leaving eight characters
+    against a ten-character floor, so every part was filtered out and verbatim()
+    returned False for a string that is demonstrably in the body.
+    """
+
+    def test_a_quote_long_enough_to_measure(self):
+        self.assertTrue(measurable("opened in 1957 and employed 300"))
+
+    def test_a_quote_too_short_once_despaced(self):
+        # "Huu-ay-aht" -> "huuayaht", eight characters.
+        self.assertFalse(measurable("Huu-ay-aht"))
+
+    def test_short_quote_present_in_the_body_is_not_reported_missing(self):
+        body = despace("the Huu-ay-aht First Nations signed in 2011")
+        self.assertNotEqual(classify("Huu-ay-aht", body, body), "MISSING")
+
+    def test_short_quote_gets_its_own_verdict(self):
+        body = despace("the Huu-ay-aht First Nations signed in 2011")
+        self.assertEqual(classify("Huu-ay-aht", body, body), "UNMEASURED")
+
+    def test_an_unmeasurable_quote_absent_from_the_body_is_also_unmeasured(self):
+        # The verdict is about the quote, not the body: nothing can be said
+        # either way, and saying MISSING would be saying something.
+        body = despace("nothing relevant here at all")
+        self.assertEqual(classify("Huu-ay-aht", body, body), "UNMEASURED")
 
 
 class TestCoverage(unittest.TestCase):
