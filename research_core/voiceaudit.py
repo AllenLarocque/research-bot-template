@@ -147,8 +147,12 @@ PATTERNS = [
      # publisher, which is the form the rule asks for; flagging it would tell
      # an agent to undo the fix. "Everything here comes from one source:" is
      # the page describing its own sourcing, and still matches.
-     r"|\bone source\b(?!\s+(?:of|says|said|records|gives|dates|has|reports"
-     r"|puts|calls|names|adds|notes)\b)"),
+     # Not "any one source": that quantifies over ALL sources -- an inference
+     # marker saying a sentence is a synthesis no single source states -- which
+     # is the opposite of counting this page's. Written with \s rather than a
+     # space because a lookbehind must be fixed-width.
+     r"|(?<!any\s)\bone source\b(?!\s+(?:of|says|said|records|gives|dates|has"
+     r"|reports|puts|calls|names|adds|notes)\b)"),
     ("search-limits", WARN,
      r"\bnothing read for\b|\bnothing captured\b"
      r"|\bno source (?:says|supports|names|gives|found)\b"),
@@ -156,7 +160,56 @@ PATTERNS = [
     ("meta-unsourced", WARN, r"\bunsourced\b"),
 ]
 
-_COMPILED = [(name, sev, re.compile(pat, re.I)) for name, sev, pat in PATTERNS]
+def line_break_tolerant(pattern):
+    """Every literal space in `pattern` matches any run of whitespace.
+
+    Wikitext is hard-wrapped, so a two-word phrase is as likely to arrive with a
+    newline between the words as a space. Three absence sentences were in the
+    corpus and `page-self` flagged one: "have no\npages here" and "has no
+    page\nhere" escaped on the line break alone.
+
+    Applied at compile time rather than written into each pattern, because the
+    ones that matter are exactly the ones nobody remembers to escape. Note that
+    this is why a lookbehind here must be written with `\s` rather than a
+    literal space -- `\s+` is variable-width and Python rejects it.
+    """
+    return pattern.replace(" ", r"\s+")
+
+
+_COMPILED = [(name, sev, re.compile(line_break_tolerant(pat), re.I))
+             for name, sev, pat in PATTERNS]
+
+# Strongest first: a match covering two rated surfaces takes the strongest
+# claim any of them makes, not whichever end the regex happened to start on.
+_RANK = {ERROR: 2, WARN: 1}
+
+
+def rate(severity, label, start, end):
+    """(severity, surface) for a match spanning [start, end).
+
+    A plain severity applies everywhere, so it is reported against the surface
+    the match starts on. A surface MAP is different: the match may cross a
+    boundary, and rating it by its first offset alone is what let an
+    edit-history note go unreported. Every relationship row carries an
+    `object=` field, `object` is one of that pattern's own keywords, and a match
+    opening there and reaching into the note was rated as prose -- where the
+    pattern is IGNORE -- and dropped. Worse, finditer returns non-overlapping
+    matches, so the dropped match consumed the correct one behind it.
+
+    So a mapped pattern is rated by the strongest claim any surface it touches
+    makes. IGNORE still wins when EVERY covered surface ignores it, which keeps
+    a date in ordinary prose silent.
+    """
+    if not isinstance(severity, dict):
+        return severity, label(start)
+
+    best, best_where = IGNORE, label(start)
+    for offset in range(start, max(start + 1, end)):
+        where = label(offset)
+        rated = severity_for(severity, where)
+        if rated is not IGNORE and _RANK.get(rated, 0) > _RANK.get(best, 0):
+            best, best_where = rated, where
+    return best, best_where
 
 
 def severity_for(severity, where):
@@ -238,8 +291,7 @@ def scan(text, skip=(), surface=None):
     found = []
     for name, severity, pattern in _COMPILED:
         for m in pattern.finditer(searchable):
-            where = label(m.start())
-            rated = severity_for(severity, where)
+            rated, where = rate(severity, label, m.start(), m.end())
             if rated is IGNORE:
                 continue
             found.append(Finding(

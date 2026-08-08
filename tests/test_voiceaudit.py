@@ -304,6 +304,91 @@ class TestRowApparatus(unittest.TestCase):
         self.assertIn("names-apparatus", names(scan("this row records the sale")))
 
 
+class TestSurfaceStraddle(unittest.TestCase):
+    """A match that begins on one surface and ends on another.
+
+    Pass 3 found the check reporting a page as clean while it carried an
+    edit-history note, and this is why: scan rated a finding by the surface its
+    match STARTED on. edit-history is IGNORE outside a note, so a match opening
+    one character before the note marker was dropped -- and because finditer
+    returns non-overlapping matches, the dropped match also consumed the correct
+    one that would have matched cleanly inside the note.
+    """
+
+    def surface(self, note_from):
+        return lambda off: "note" if off >= note_from else "prose"
+
+    def test_a_match_reaching_into_a_note_is_rated_by_the_note(self):
+        text = "object=Whalen note=START MOVED FROM 1950 TO 1959."
+        found = [f for f in scan(text, surface=self.surface(text.index("note=")))
+                 if f.name == "edit-history"]
+        self.assertEqual([f.severity for f in found], [ERROR])
+
+    def test_the_reported_surface_is_the_one_that_earned_the_rating(self):
+        text = "object=Whalen note=START MOVED FROM 1950 TO 1959."
+        found = [f for f in scan(text, surface=self.surface(text.index("note=")))
+                 if f.name == "edit-history"]
+        self.assertEqual([f.where for f in found], ["note"])
+
+    def test_a_match_wholly_outside_is_still_ignored(self):
+        # The fix must not turn IGNORE into "flag everywhere". A date in prose
+        # with no note anywhere near it stays silent.
+        self.assertEqual([f for f in scan("the mill closed on 2026-08-06")
+                          if f.name == "edit-history"], [])
+
+    def test_the_strongest_surface_wins(self):
+        # Straddling prose (warn) and a heading (error): the error is the
+        # stronger claim and rating it by whichever end came first is arbitrary.
+        # No bookkeeping word in this one, or it belongs to progress-note
+        # instead and never reaches the surface-mapped pattern at all.
+        text = "counted by a second publisher in 1953"
+        found = [f for f in scan(text, surface=lambda off: "heading" if off > 20 else "prose")
+                 if f.name == "source-ordinal"]
+        self.assertEqual([f.severity for f in found], [ERROR])
+
+
+class TestWhitespaceTolerance(unittest.TestCase):
+    """Wikitext is hard-wrapped, so a literal space is half a pattern.
+
+    Three absence sentences were in the corpus and page-self flagged one. The
+    other two escaped on a line break alone -- "have no\npages here" and "has no
+    page\nhere".
+    """
+
+    def test_a_phrase_broken_across_a_line(self):
+        self.assertIn("page-self", names(scan("they have no\npages here.")))
+        self.assertIn("page-self", names(scan("it has no page\nhere.")))
+
+    def test_a_phrase_broken_by_several_spaces(self):
+        self.assertIn("names-wiki", names(scan("the rest of  this   wiki")))
+
+    def test_the_unbroken_form_still_matches(self):
+        self.assertIn("page-self", names(scan("they have no pages here.")))
+
+
+class TestQuantifierNotTally(unittest.TestCase):
+    """`any one source` quantifies over all sources; `one source` counts this
+    page's.
+
+    The {{Inference}} template on Canfor says a sentence is a synthesis and not
+    something any single source states -- the opposite of the bookkeeping the
+    pattern exists to catch.
+    """
+
+    def test_any_one_source_is_not_flagged(self):
+        text = ("a synthesis of the cited mill pages rather than a claim made "
+                "by any one source")
+        self.assertNotIn("rests-on", names(scan(text)))
+
+    def test_the_quantifier_is_excluded_across_a_line_break(self):
+        self.assertNotIn("rests-on", names(scan("a claim made by any\none source")))
+
+    def test_the_bookkeeping_form_is_still_flagged(self):
+        self.assertIn("rests-on", names(scan("ONE SOURCE, so unverified")))
+        self.assertIn("rests-on",
+                      names(scan("Everything here comes from one source: Parnaby")))
+
+
 class TestAudit(unittest.TestCase):
     def test_clean_page_is_omitted(self):
         results = audit({"Clean": "The mill opened in 1935.", "Dirty": "the corpus"})
