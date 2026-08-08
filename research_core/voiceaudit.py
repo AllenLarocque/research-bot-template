@@ -39,6 +39,11 @@ import re
 
 ERROR = "error"
 WARN = "warn"
+# A severity map may rate a surface IGNORE, meaning the pattern yields nothing
+# there. An ISO date is a bookkeeping stamp in a row note and ordinary content
+# in a date field, and a warning a reader must dismiss every time is worse than
+# silence -- so it is not a quieter finding, it is no finding.
+IGNORE = None
 
 # Surface labels this module gives meaning to. A caller may use any labels it
 # likes; these are the ones a severity map can key on, and DEFAULT is required
@@ -68,9 +73,14 @@ PATTERNS = [
     ("names-corpus", ERROR, r"\bcorpus\b"),
     ("names-dossier", ERROR, r"\bdossiers?\b|\bsnapshots?/"),
     ("names-wiki", ERROR, r"\bthis wiki\b|\bthe wiki\b"),
+    # `no .. row is written` reaches the forms that omit the word
+    # "relationship" -- "No row is written for Island Timberlands", "No
+    # `holds_tenure` row is written" -- and `this row` reaches a page
+    # discussing which rows it carries. A page has no business doing either.
     ("names-apparatus", ERROR,
      r"\brelationship rows?\b|\bSource pages?\b|\bthe audit queue\b"
-     r"|\bverification counters?\b|\bthe claim ledger\b"),
+     r"|\bverification counters?\b|\bthe claim ledger\b"
+     r"|\bno\b[^.]{0,20}\brow is written\b|\bthis row\b"),
     # Bookkeeping announcements, which no page has a reason to make.
     #
     # The ordinal alternative carries a context requirement the others do not.
@@ -99,6 +109,21 @@ PATTERNS = [
     # No page has a legitimate reason to name a script. Two in the corpus when
     # this was added, both tools of this project's own.
     ("names-tool", ERROR, r"\b\w+\.py\b"),
+    # A row note recording the edit that made the row: the largest unflagged
+    # class in the pass-2 cleanup, on twenty-odd pages, and nothing touched it.
+    # A page has no reason to date its own editing, and a note that needs a real
+    # date has the row's date fields -- so an ISO date on the note surface is
+    # the cheapest precise rule available.
+    #
+    # The verbs are deliberately not matched on their own. "moved from",
+    # "raised from" and "migrated" are ordinary English about the subject -- a
+    # head office moves, wages are raised, workers migrate. Only a FIELD-change
+    # record trips this, which means the field has to be named.
+    ("edit-history", {NOTE: ERROR, DEFAULT: IGNORE},
+     r"\b20\d\d-\d\d-\d\d\b"
+     r"|\b(?:start|end|end date|object|predicate|precision|date_precision"
+     r"|verification|this row)\b[^.]{0,30}\b(?:moved|changed|raised|replaces)\b"
+     r"|\boriginal note\b"),
 
     # `no pages? here`, not `no page here`: the singular was flagged and deleted
     # on one page the same day the plural survived on another, one letter apart.
@@ -113,7 +138,17 @@ PATTERNS = [
     ("rests-on", WARN,
      r"\brests? on\b(?=[^.]{0,40}\b(?:source|publisher|account|citation)\b)"
      r"|\bsingle publisher\b|\bone publisher\b"
-     r"|\bsingle (?:tertiary )?source\b"),
+     r"|\bsingle (?:tertiary )?source\b"
+     # `one source` is the capitalised bookkeeping note -- "ONE SOURCE, so
+     # unverified" -- which `single source` never matched.
+     #
+     # Not followed by "of" (a mill is one source of employment), and not by a
+     # reporting verb. "one source says 1988" ATTRIBUTES a disagreement to a
+     # publisher, which is the form the rule asks for; flagging it would tell
+     # an agent to undo the fix. "Everything here comes from one source:" is
+     # the page describing its own sourcing, and still matches.
+     r"|\bone source\b(?!\s+(?:of|says|said|records|gives|dates|has|reports"
+     r"|puts|calls|names|adds|notes)\b)"),
     ("search-limits", WARN,
      r"\bnothing read for\b|\bnothing captured\b"
      r"|\bno source (?:says|supports|names|gives|found)\b"),
@@ -204,9 +239,12 @@ def scan(text, skip=(), surface=None):
     for name, severity, pattern in _COMPILED:
         for m in pattern.finditer(searchable):
             where = label(m.start())
+            rated = severity_for(severity, where)
+            if rated is IGNORE:
+                continue
             found.append(Finding(
                 name=name,
-                severity=severity_for(severity, where),
+                severity=rated,
                 where=where,
                 line=text.count("\n", 0, m.start()) + 1,
                 start=m.start(),

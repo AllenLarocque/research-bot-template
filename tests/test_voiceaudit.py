@@ -218,6 +218,92 @@ class TestRestsOnNarrowing(unittest.TestCase):
             self.assertIn("rests-on", names(scan(text)), text)
 
 
+class TestEditHistory(unittest.TestCase):
+    """A row note recording the edit that made the row.
+
+    The largest unflagged class in pass 2 -- twenty-odd pages -- and no pattern
+    touched it: "PRECISION RAISED FROM circa TO year AND THE ROW VERIFIED,
+    2026-08-06", "START MOVED FROM 1954-12 TO 1959", "Migrated 2026-08-05".
+    A page has no reason to date its own editing; a note that needs a real date
+    has the row's date fields.
+    """
+
+    def test_an_iso_date_in_a_note_is_an_error(self):
+        # Two spans match here -- the field-change record and the date stamp --
+        # and both are the same defect.
+        found = [f for f in scan("PRECISION RAISED FROM circa TO year, 2026-08-06",
+                                 surface=lambda o: "note")
+                 if f.name == "edit-history"]
+        self.assertEqual(len(found), 2)
+        self.assertEqual(set(f.severity for f in found), {ERROR})
+
+    def test_the_same_date_in_prose_is_not_a_finding_at_all(self):
+        # Not a warning -- nothing. An ISO date in running prose or a template
+        # date field is ordinary content, and a warning a reader must dismiss
+        # every time is worse than silence.
+        self.assertNotIn("edit-history", names(scan("signed on 2026-08-06")))
+
+    def test_a_field_change_record_is_an_error_in_a_note(self):
+        for text in ("START MOVED FROM 1954-12 TO 1959",
+                     "OBJECT CHANGED FROM Port Alberni TO Vancouver",
+                     "END DATE MOVED FROM 1989 TO CIRCA 1987",
+                     "ORIGINAL NOTE, RETAINED"):
+            found = [f for f in scan(text, surface=lambda o: "note")
+                     if f.name == "edit-history"]
+            self.assertTrue(found, text)
+
+    def test_ordinary_prose_using_those_verbs_is_left_alone(self):
+        # "moved from", "raised from" and "migrated" are all ordinary English
+        # about the subject. Only a field-change record trips this.
+        for text in ("the head office moved from Vancouver to Nanaimo in 1953",
+                     "wages were raised from $1.10 to $1.35 an hour",
+                     "many workers migrated from the prairies"):
+            found = [f for f in scan(text, surface=lambda o: "note")
+                     if f.name == "edit-history"]
+            self.assertEqual(found, [], text)
+
+
+class TestOneSource(unittest.TestCase):
+    """`ONE SOURCE` in capitals, which `single source` never matched."""
+
+    def test_one_source_bookkeeping_is_flagged(self):
+        for text in ("ONE SOURCE, so unverified", "ONE SOURCE ONLY",
+                     "One source, so unverified"):
+            self.assertIn("rests-on", names(scan(text)), text)
+
+    def test_one_source_of_something_is_left_alone(self):
+        # The noun phrase, not the bookkeeping note.
+        self.assertNotIn("rests-on",
+                         names(scan("the mill was one source of employment")))
+
+    def test_attributing_a_claim_to_one_source_is_left_alone(self):
+        # "A disagreement between sources is content -- attribute it and move
+        # on" is what the rule ASKS for. "one source says 1988" is that form,
+        # and flagging it tells an agent to undo the fix.
+        for text in ("acquired by Fletcher Challenge (1987; one source says 1988)",
+                     "At Ocean Falls one source records both the mill and the town",
+                     "one source dates the closure to 2009"):
+            self.assertNotIn("rests-on", names(scan(text)), text)
+
+    def test_the_page_describing_its_own_sourcing_is_still_flagged(self):
+        for text in ("Everything here comes from one source: Parnaby's thesis",
+                     "ONE SOURCE, so unverified"):
+            self.assertIn("rests-on", names(scan(text)), text)
+
+
+class TestRowApparatus(unittest.TestCase):
+    """`No row is written` without the word "relationship"."""
+
+    def test_no_row_is_written(self):
+        for text in ("No row is written for Island Timberlands",
+                     "No `holds_tenure` row is written here",
+                     "No occurred_at ROW is written"):
+            self.assertIn("names-apparatus", names(scan(text)), text)
+
+    def test_a_page_naming_this_row(self):
+        self.assertIn("names-apparatus", names(scan("this row records the sale")))
+
+
 class TestAudit(unittest.TestCase):
     def test_clean_page_is_omitted(self):
         results = audit({"Clean": "The mill opened in 1935.", "Dirty": "the corpus"})
