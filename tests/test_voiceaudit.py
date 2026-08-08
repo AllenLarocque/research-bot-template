@@ -47,13 +47,16 @@ class TestErrorPatterns(unittest.TestCase):
         self.assertIn("progress-note",
                       names(scan("the first source on this page that is not Wikipedia")))
 
-    def test_progress_note_catches_account_and_source_not_only_publisher(self):
-        # Pass 1 of the cleanup found the same announcement written as "a second
-        # account" and "a THIRD SOURCE" three times more often than as "a second
-        # publisher", all of it sailing past the original pattern.
+    def test_the_ordinal_forms_are_all_still_reached(self):
+        # Pass 1 found the same announcement written as "a second account" and
+        # "a THIRD SOURCE" three times more often than as "a second publisher".
+        # Which of the two ordinal patterns claims a given span depends on
+        # whether a bookkeeping word sits near it, and its severity then depends
+        # on the surface -- but every one of these is still reached.
         for phrase in ("a second publisher", "A third account of the year",
                        "No second source found names it", "another account"):
-            self.assertIn("progress-note", names(scan(phrase)), phrase)
+            self.assertTrue(
+                names(scan(phrase)) & {"progress-note", "source-ordinal"}, phrase)
 
     def test_progress_note_leaves_ordinary_counting_alone(self):
         # The widened alternation is two words, not one: "source" on its own
@@ -140,6 +143,79 @@ class TestSurface(unittest.TestCase):
     def test_caller_supplies_the_label(self):
         found = scan("the corpus", surface=lambda offset: "heading")
         self.assertEqual([f.where for f in found], ["heading"])
+
+
+class TestSurfaceDependentSeverity(unittest.TestCase):
+    """A pattern may be an error on one surface and a question on another.
+
+    Pass 2 produced the first ERROR false positive: "a second production line
+    that Hak counts as a mill and another source would not" is two writers
+    counting differently -- the source-disagreement content CLAUDE.md asks for.
+    It was reworded only because ERROR is the hard gate.
+
+    A bookkeeping-context requirement drops that sentence, and also drops
+    "== A second account of the affair ==", which is always narration: a
+    section heading organised by source-order is the page describing its own
+    research. Surface is the discriminator the text alone does not carry.
+    """
+
+    def test_a_bare_ordinal_in_a_heading_is_an_error(self):
+        found = scan("A second account of the affair",
+                     surface=lambda o: "heading")
+        self.assertEqual([(f.name, f.severity) for f in found],
+                         [("source-ordinal", ERROR)])
+
+    def test_the_same_words_in_a_note_are_an_error(self):
+        found = scan("A second account of the affair", surface=lambda o: "note")
+        self.assertEqual([f.severity for f in found], [ERROR])
+
+    def test_the_same_words_in_prose_are_only_a_warning(self):
+        found = scan("a mill that Hak counts and another source would not")
+        self.assertEqual([(f.name, f.severity) for f in found],
+                         [("source-ordinal", WARN)])
+
+    def test_prose_doing_bookkeeping_is_still_an_error(self):
+        # The ordinal with a bookkeeping word after it is not a page comparing
+        # two writers; it is a page reporting what the research turned up.
+        for text in ("No second source found names Canadian Western Lumber",
+                     "A THIRD SOURCE FROM A DIFFERENT PUBLISHER, added 2026-08-06",
+                     "A second source was added and it corroborates the end date"):
+            found = [f for f in scan(text) if f.severity == ERROR]
+            self.assertTrue(found, text)
+            self.assertEqual(found[0].name, "progress-note", text)
+
+    def test_the_two_ordinal_patterns_never_both_fire(self):
+        # Disjoint by construction: one requires the bookkeeping context, the
+        # other forbids it. Two findings on one span would double-count it.
+        for text in ("No second source found names it",
+                     "another source would not"):
+            names_hit = [f.name for f in scan(text)
+                         if f.name in ("progress-note", "source-ordinal")]
+            self.assertEqual(len(names_hit), 1, text)
+
+    def test_an_unlisted_surface_falls_back_to_the_default(self):
+        found = scan("A second account", surface=lambda o: "somewhere-new")
+        self.assertEqual([f.severity for f in found], [WARN])
+
+
+class TestRestsOnNarrowing(unittest.TestCase):
+    """`rests on` is ordinary English until a source-word is nearby.
+
+    Two false positives in pass 2, both about the subject: a tenure system
+    resting on Crown authority, and a Nation's ownership resting on its own
+    laws.
+    """
+
+    def test_ordinary_english_is_not_flagged(self):
+        for text in ("it is that authority the tenure system rests on.",
+                     "its ownership of land rests on the laws of hahuuli"):
+            self.assertNotIn("rests-on", names(scan(text)), text)
+
+    def test_narration_is_still_flagged(self):
+        for text in ("The closure year on this page still rests on a single publisher.",
+                     "Everything above rests on a single tertiary source",
+                     "this row rests on one publisher and no other"):
+            self.assertIn("rests-on", names(scan(text)), text)
 
 
 class TestAudit(unittest.TestCase):

@@ -40,6 +40,22 @@ import re
 ERROR = "error"
 WARN = "warn"
 
+# Surface labels this module gives meaning to. A caller may use any labels it
+# likes; these are the ones a severity map can key on, and DEFAULT is required
+# in every map so an unlisted surface can never leave a finding unrated.
+PROSE = "prose"
+HEADING = "heading"
+NOTE = "note"
+DEFAULT = "*"
+
+# Shared by the two ordinal patterns below, which must stay complementary: the
+# same alternation, one requiring the bookkeeping context and one forbidding it.
+_ORDINAL = r"\b(?:second|third|fourth|another) (?:account|source|publisher)\b"
+_BOOKKEEPING_WORDS = (r"[^.]{0,60}\b(?:found|added|here|for this|on this page"
+                      r"|in the corpus|from a different)\b")
+_BOOKKEEPING = r"(?=" + _BOOKKEEPING_WORDS + r")"
+_NOT_BOOKKEEPING = r"(?!" + _BOOKKEEPING_WORDS + r")"
+
 # (name, severity, pattern), matched case-insensitively.
 #
 # On the ERROR side the test is "could a page about its subject ever want this
@@ -55,16 +71,31 @@ PATTERNS = [
     ("names-apparatus", ERROR,
      r"\brelationship rows?\b|\bSource pages?\b|\bthe audit queue\b"
      r"|\bverification counters?\b|\bthe claim ledger\b"),
-    # "publisher" was the whole alternation until pass 1 of the cleanup showed
-    # the same announcement written 33 times as "a second ACCOUNT" or "a THIRD
-    # SOURCE" and going unflagged -- three times more often than the wording the
-    # pattern knew. All 33 were checked in context before this widened: every
-    # one is an announcement of what the research turned up, and none is a page
-    # saying something like "a second source of pulp logs".
+    # Bookkeeping announcements, which no page has a reason to make.
+    #
+    # The ordinal alternative carries a context requirement the others do not.
+    # "publisher" was the whole alternation until pass 1 widened it to
+    # account|source on 33 instances, every one an announcement -- and the
+    # widening note claimed none was "a page saying something like 'a second
+    # source of pulp logs'". Pass 2 found the counter-example: "a second
+    # production line that Hak counts as a mill and another source would not"
+    # is two writers counting differently, which is the source-disagreement
+    # content the rule asks for. See `source-ordinal` for the rest of the fix.
     ("progress-note", ERROR,
      r"\bfirst source on this page\b|\balready in the corpus\b"
-     r"|\b(?:second|third|fourth|another) (?:account|source|publisher)\b"
-     r"|\bnew here\b|\bthis pass\b|\ba later pass\b"),
+     r"|\bnew here\b|\bthis pass\b|\ba later pass\b"
+     r"|" + _ORDINAL + _BOOKKEEPING),
+    # The same ordinal WITHOUT a bookkeeping word nearby -- disjoint from the
+    # pattern above by construction, so one span never counts twice.
+    #
+    # Requiring the context would have dropped the false positive and also
+    # dropped "== A second account of the affair ==", which is always
+    # narration: a section heading organised by source-order is the page
+    # describing its own research, whatever words follow. Surface carries the
+    # distinction the text does not, so this is an error where only an agent
+    # writes -- headings and row notes -- and a question in running prose.
+    ("source-ordinal", {HEADING: ERROR, NOTE: ERROR, DEFAULT: WARN},
+     _ORDINAL + _NOT_BOOKKEEPING),
     # No page has a legitimate reason to name a script. Two in the corpus when
     # this was added, both tools of this project's own.
     ("names-tool", ERROR, r"\b\w+\.py\b"),
@@ -74,8 +105,14 @@ PATTERNS = [
     ("page-self", WARN,
      r"\bthis page\b|\bthe page\b|\bthis article\b|\bthis entity\b"
      r"|\bno pages? here\b|\bon this record\b"),
+    # `rests on` needs a source-word near it. On its own it is ordinary
+    # English and pass 2 produced two false positives: a tenure system that
+    # rests on Crown authority, and a Nation's ownership that rests on its own
+    # laws. Both are about the subject. The narration this exists to catch
+    # always names what the page rests on -- a publisher, a source, an account.
     ("rests-on", WARN,
-     r"\brests? on\b|\bsingle publisher\b|\bone publisher\b"
+     r"\brests? on\b(?=[^.]{0,40}\b(?:source|publisher|account|citation)\b)"
+     r"|\bsingle publisher\b|\bone publisher\b"
      r"|\bsingle (?:tertiary )?source\b"),
     ("search-limits", WARN,
      r"\bnothing read for\b|\bnothing captured\b"
@@ -86,7 +123,18 @@ PATTERNS = [
 
 _COMPILED = [(name, sev, re.compile(pat, re.I)) for name, sev, pat in PATTERNS]
 
-PROSE = "prose"
+
+def severity_for(severity, where):
+    """One finding's severity, given a pattern's rating and its surface.
+
+    A rating is either a plain severity, or a map from surface label to
+    severity carrying a DEFAULT entry. The map exists because some wordings are
+    narration on one surface and ordinary English on another -- see
+    `source-ordinal`.
+    """
+    if isinstance(severity, dict):
+        return severity.get(where, severity[DEFAULT])
+    return severity
 
 
 class Finding(object):
@@ -155,10 +203,11 @@ def scan(text, skip=(), surface=None):
     found = []
     for name, severity, pattern in _COMPILED:
         for m in pattern.finditer(searchable):
+            where = label(m.start())
             found.append(Finding(
                 name=name,
-                severity=severity,
-                where=label(m.start()),
+                severity=severity_for(severity, where),
+                where=where,
                 line=text.count("\n", 0, m.start()) + 1,
                 start=m.start(),
                 end=m.end(),
