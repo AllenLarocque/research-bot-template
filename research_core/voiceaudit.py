@@ -109,6 +109,24 @@ PATTERNS = [
     # No page has a legitimate reason to name a script. Two in the corpus when
     # this was added, both tools of this project's own.
     ("names-tool", ERROR, r"\b\w+\.py\b"),
+    # A snake_case identifier in readable text is the data model showing
+    # through: a predicate name, a field name, a schema key. The largest class
+    # all three cleanup passes reported as unreached -- "`participated_in`
+    # rather than `organized_by`", "Same date caveat as the subsidiary_of row
+    # above", "date_precision is year, the coarser of the two ends".
+    #
+    # NOT built from the vocabulary of predicate names, which was the obvious
+    # idea and is wrong twice over. Those names read as ordinary English
+    # ("Acquired", "Director of", "Subsidiary of") and matching them found 28
+    # spans of which almost none was narration; even their machine spellings
+    # include bare verbs, so "Canfor acquired Northwood" would flag. The
+    # underscore is the entire signal, and it needs no vocabulary to stay in
+    # step with -- a predicate added tomorrow is caught the same day.
+    #
+    # A caller MUST skip its format's own field assignments, or every stored
+    # predicate value in the corpus reports as narration -- 247 of them, in the
+    # measurement that produced this pattern, against 9 real findings.
+    ("names-identifier", ERROR, r"\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b"),
     # A row note recording the edit that made the row: the largest unflagged
     # class in the pass-2 cleanup, on twenty-odd pages, and nothing touched it.
     # A page has no reason to date its own editing, and a note that needs a real

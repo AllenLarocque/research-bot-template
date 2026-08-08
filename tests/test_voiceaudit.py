@@ -389,6 +389,46 @@ class TestQuantifierNotTally(unittest.TestCase):
                       names(scan("Everything here comes from one source: Parnaby")))
 
 
+class TestMachineIdentifiers(unittest.TestCase):
+    """A snake_case identifier in readable text is the data model showing.
+
+    The largest class all three cleanup passes reported as unreached:
+    "`participated_in` rather than `organized_by`", "Same date caveat as the
+    subsidiary_of row above", "date_precision is year, the coarser of the two
+    ends". A page has no reason to write a field or predicate name.
+
+    Deliberately not built from the wiki's predicate vocabulary. Those names
+    read as ordinary English -- "Acquired", "Director of", "Subsidiary of" --
+    and matching them found 28 spans of which almost none was narration. Even
+    the machine spellings include bare verbs: "Canfor acquired Northwood" is
+    content. The underscore is the whole signal, and it needs no vocabulary.
+    """
+
+    def test_a_predicate_name(self):
+        self.assertIn("names-identifier",
+                      names(scan("`participated_in` rather than `organized_by`")))
+
+    def test_a_field_name(self):
+        self.assertIn("names-identifier",
+                      names(scan("date_precision is year, the coarser of the two")))
+
+    def test_ordinary_prose_has_no_underscores(self):
+        clean = ("The mill was acquired by Tolko Industries in 1987 and the "
+                 "head office moved to Vancouver.")
+        self.assertEqual([f for f in scan(clean) if f.name == "names-identifier"], [])
+
+    def test_a_bare_verb_from_the_vocabulary_is_not_an_identifier(self):
+        # "acquired", "funded", "lobbied" and "supplies" are all predicate names
+        # AND ordinary English. Only the underscored spellings are machinery.
+        self.assertEqual(
+            [f for f in scan("Canfor acquired Northwood Inc in 1999")
+             if f.name == "names-identifier"], [])
+
+    def test_it_is_an_error(self):
+        found = [f for f in scan("the owned_by row below") if f.name == "names-identifier"]
+        self.assertEqual([f.severity for f in found], [ERROR])
+
+
 class TestAudit(unittest.TestCase):
     def test_clean_page_is_omitted(self):
         results = audit({"Clean": "The mill opened in 1935.", "Dirty": "the corpus"})
