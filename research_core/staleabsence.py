@@ -112,7 +112,27 @@ def candidate_names(sentence):
     return out
 
 
-def expired(pages, present, extra_names=None, sentences=None, profile=DEFAULT):
+# A sentence the phrase list MUST match. It is the shape the corpus actually
+# used, and it is the whole basis for trusting a clean result: if this stops
+# matching, the patterns have rotted and a sweep that found nothing found
+# nothing for the wrong reason.
+SELFTEST_SENTENCE = "The Workers' Unity League has no page here."
+
+
+def patterns_work():
+    """Does the phrase list still match a sentence it is supposed to match?
+
+    The cheap standing answer to "is a clean result real?". Written because the
+    guard in expired() -- a sweep that finds nothing must be a broken query --
+    stopped being true the moment a cleanup pass removed the last absence
+    sentence from the corpus. The tool then hard-failed on a corpus it had
+    helped make correct, which is a bad way to be told you succeeded.
+    """
+    return bool(absence_claims(SELFTEST_SENTENCE))
+
+
+def expired(pages, present, extra_names=None, sentences=None, profile=DEFAULT,
+            require_claims=False):
     """[(title, Claim, [names that now exist])] for claims that have gone false.
 
     `present` is the set of titles that exist. `extra_names(title, sentence)`
@@ -127,11 +147,16 @@ def expired(pages, present, extra_names=None, sentences=None, profile=DEFAULT):
     the regions are. Without it the whole text is one region, which is right
     for plain prose and wrong for anything else.
 
-    Raises when the sweep found nothing to check. An empty corpus is a broken
-    query; so is a corpus in which no page anywhere claims an absence, because
-    the phrases below are ordinary editorial wording and a real collection uses
-    them. Reporting "clean" for either would convert "not measured" into
-    "measured clean".
+    An empty `pages` always raises: a sweep that examined nothing must fail
+    loudly rather than report clean.
+
+    Finding no CLAIMS is different, and the difference was learned the hard
+    way. This function used to raise on that too, reasoning that a real
+    collection always says "no page here" somewhere. Then a cleanup pass
+    removed the last such sentence and the tool began hard-failing on a corpus
+    it had helped make correct. With `require_claims`, zero claims raises only
+    when the phrase list ALSO fails its own self-test -- so "nothing left to
+    find" and "the patterns rotted" stop looking alike.
     """
     if not pages:
         raise ValueError(
@@ -154,9 +179,10 @@ def expired(pages, present, extra_names=None, sentences=None, profile=DEFAULT):
                 if live:
                     found.append((title, claim, live))
 
-    if not checked:
+    if not checked and require_claims and not patterns_work():
         raise ValueError(
-            "expired() found no absence claims in %d pages: the phrase list has "
-            "stopped matching, which is more likely than a corpus that never "
-            "says a page is missing" % len(pages))
+            "expired() found no absence claims in %d pages AND its own phrase "
+            "list no longer matches %r -- the patterns have rotted, so this is "
+            "not a clean corpus, it is a broken check"
+            % (len(pages), SELFTEST_SENTENCE))
     return found

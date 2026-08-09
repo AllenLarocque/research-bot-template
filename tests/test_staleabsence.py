@@ -12,8 +12,10 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import re
+
 from research_core.staleabsence import (
-    absence_claims, candidate_names, expired,
+    absence_claims, candidate_names, expired, patterns_work,
 )
 
 
@@ -115,11 +117,41 @@ class TestExpired(unittest.TestCase):
         got = expired({"P": page}, {"Sayward"})
         self.assertEqual(len(got), 1)
 
-    def test_no_claims_anywhere_raises(self):
-        # A corpus-wide sweep finding no absence claims at all is a broken
-        # query far more often than a corpus that never says "no page here".
-        with self.assertRaises(ValueError):
-            expired({"A": "Ordinary prose about a mill and its owners."}, set())
+    def test_a_corpus_with_no_claims_is_clean_when_the_patterns_still_work(self):
+        # The guard below assumes that finding nothing means the phrase list
+        # broke. That was true when three absence sentences existed. A cleanup
+        # pass then removed all three, and the tool started hard-failing on a
+        # corpus it had helped make correct -- succeeding itself into an error.
+        #
+        # Zero findings is only suspicious if the patterns have stopped
+        # matching. Prove they still do, and zero is a real answer.
+        self.assertTrue(patterns_work())
+        self.assertEqual(
+            expired({"A": "Ordinary prose about a mill and its owners."},
+                    set(), require_claims=True),
+            [])
+
+    def test_the_selftest_notices_a_broken_phrase_list(self):
+        import research_core.staleabsence as sa
+        original = sa.ABSENCE
+        sa.ABSENCE = re.compile(r"\bthis phrase matches nothing at all\b")
+        try:
+            self.assertFalse(patterns_work())
+            with self.assertRaises(ValueError):
+                expired({"A": "Ordinary prose."}, set(), require_claims=True)
+        finally:
+            sa.ABSENCE = original
+        self.assertTrue(patterns_work())
+
+    def test_no_claims_does_not_raise_on_its_own(self):
+        # Changed deliberately. This used to raise, on the reasoning that a real
+        # collection always says "no page here" somewhere. A cleanup pass then
+        # removed the last one and the tool hard-failed on a corpus it had
+        # helped make correct. Zero claims now raises only when the phrase list
+        # also fails its own self-test -- see TestExpired above.
+        self.assertEqual(
+            expired({"A": "Ordinary prose about a mill and its owners."}, set()),
+            [])
 
     def test_an_empty_corpus_raises(self):
         with self.assertRaises(ValueError):
