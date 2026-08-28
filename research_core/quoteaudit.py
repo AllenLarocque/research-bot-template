@@ -252,6 +252,32 @@ def coverage(quote, body):
 # would let a quote verify against a file that was never fetched.
 SIDECAR_SUFFIX = ".meta.json"
 
+MARKUP_SUFFIXES = (".html", ".htm", ".xhtml", ".xml")
+_MARKUP_SNIFF = re.compile(r"<\s*(?:!doctype\s+html|html\b|\?xml\b)", re.I)
+# How much of a file to sniff. A capture may open with a licence header or a
+# byte-order mark before its first tag; 4 KB clears those without reading a
+# 20 MB scan into memory to answer a yes/no question.
+_SNIFF_BYTES = 4096
+
+
+def is_markup(name, raw):
+    """Whether a capture should have its tags stripped before comparison.
+
+    Extension OR sniff, because each alone is wrong about a real file in this
+    corpus and they are wrong about different ones: one .txt capture is an SEC
+    filing saved as HTML (extension alone would leave its tags in the body),
+    and one .html capture carries no doctype in its first 4 KB (sniffing alone
+    would leave its tags in). The union is right about both.
+
+    Both possible errors point the same way -- a tag left in the body, or text
+    stripped out of it, can only make a real quotation look absent, never make
+    an invented one look present -- so this may be too eager without becoming
+    dangerous. That is why the union is the safe choice rather than a
+    compromise between two signals.
+    """
+    return name.lower().endswith(MARKUP_SUFFIXES) or bool(
+        _MARKUP_SNIFF.search(raw[:_SNIFF_BYTES]))
+
 
 def snapshot_texts(entity_dir):
     """{filename: despace()d text} for one entity's snapshots.
@@ -273,8 +299,17 @@ def snapshot_texts(entity_dir):
                     raw = fh.read()
             except OSError:
                 continue
-            raw = _SCRIPTISH.sub(" ", raw)
-            raw = _ANY_TAG.sub(" ", raw)
+            # Strip tags only from captures that carry them. Applying these to
+            # plain text deletes every span between a "<" and the next ">",
+            # and old newspaper OCR is full of stray angle brackets: measured
+            # against one 426-page corpus, 111 plain-text captures lost more
+            # than 1% of their characters and the worst lost 75.5%, so the
+            # audit reported quotations absent from documents carrying them
+            # verbatim. All 811 markup captures there still strip, and so does
+            # the one .txt that is really an SEC filing saved as HTML.
+            if is_markup(name, raw):
+                raw = _SCRIPTISH.sub(" ", raw)
+                raw = _ANY_TAG.sub(" ", raw)
             out[name] = despace(html.unescape(raw))
     return out or None
 

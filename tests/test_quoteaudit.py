@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from research_core.quoteaudit import (
     _quoted_spans, measurable,
     despace, verbatim, ledger_quotes, classify, coverage,
-    snapshot_text, snapshot_texts, audit,
+    snapshot_text, snapshot_texts, audit, is_markup,
 )
 
 # An 8-column ledger and the older 6-column table that superseded ledgers keep
@@ -375,6 +375,59 @@ class TestSnapshotTexts(unittest.TestCase):
         joined = snapshot_text(self.root)
         self.assertIn(despace("the depot opened in 1913"), joined)
         self.assertIn(despace("the works closed in 1987"), joined)
+
+    # The tag strip used to run over every capture. Scanned newspaper OCR is
+    # full of stray angle brackets, so on a plain-text capture it deleted each
+    # span between a "<" and the next ">" -- taking real sentences with it and
+    # making the audit report quotations absent from documents that carry them
+    # word for word. One corpus lost 75.5% of a capture's characters this way.
+    # The sentence under test must sit BETWEEN a "<" and a later ">". That is
+    # what the strip deletes, and a fixture with an unclosed "<" cannot fail
+    # however broken the code is -- _ANY_TAG needs the closing bracket to
+    # match at all.
+    def test_plain_text_keeps_the_words_between_its_stray_brackets(self):
+        self._write("scan.txt",
+                    "the mill <v V - 12 Fgl burned in 1913> and was rebuilt")
+        got = snapshot_texts(self.root)["scan.txt"]
+        self.assertIn(despace("burned in 1913"), got)
+
+    def test_markup_still_has_its_tags_stripped(self):
+        self._write("page.html", "<p>the depot opened in 1913</p>")
+        got = snapshot_texts(self.root)["page.html"]
+        self.assertIn(despace("the depot opened in 1913"), got)
+        self.assertNotIn("<p>", got)
+
+    # Extension and sniff each get a real file wrong, and not the same one, so
+    # the union of the two is what decides. Both errors are safe -- a tag left
+    # in the body, or text stripped out of it, can only make a real quotation
+    # look absent -- but each of these cost a corpus a false alarm.
+    def test_html_saved_under_a_txt_name_is_still_stripped(self):
+        self._write("filing.txt",
+                    "<!DOCTYPE html><html><body><p>the merger closed</p></body></html>")
+        got = snapshot_texts(self.root)["filing.txt"]
+        self.assertIn(despace("the merger closed"), got)
+        self.assertNotIn("<p>", got)
+
+    def test_markup_with_no_doctype_is_stripped_on_its_extension(self):
+        self._write("fragment.html", "<p>the works closed in 1987</p>")
+        got = snapshot_texts(self.root)["fragment.html"]
+        self.assertNotIn("<p>", got)
+
+    def test_is_markup_decides_on_either_signal_and_neither_alone(self):
+        self.assertTrue(is_markup("a.html", "<p>no doctype here</p>"))
+        self.assertTrue(is_markup("a.txt", "<!doctype html><html>..."))
+        self.assertFalse(is_markup("a.txt", "the mill <v V - 12 Fgl burned"))
+
+    def test_a_tag_far_past_the_sniff_window_does_not_make_text_markup(self):
+        # Guards the window itself. Without a bound this would read a 20 MB
+        # scan to answer a yes/no question; with too generous a one, any OCR
+        # capture containing "<html" in its noise would be treated as markup
+        # and stripped -- reintroducing the defect on exactly the files it
+        # was fixed for.
+        self._write("scan.txt",
+                    ("x " * 2500) + "<html and the mill burned in 1913>")
+        got = snapshot_texts(self.root)["scan.txt"]
+        self.assertIn(despace("the mill burned in 1913"), got)
 
 
 if __name__ == "__main__":
