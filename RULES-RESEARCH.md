@@ -24,8 +24,8 @@ One sentence each. The incident behind a rule is in this file's git history.
 - A quotation is copied from the capture, never reconstructed: extract the span by position, because retyping recapitalises, straightens apostrophes, drops markers, and passes every check.
 - Quote the characters a reader sees: unescape entities, and quote from the stripped rendering of an HTML capture.
 - An ellipsis marks an omission within one passage of one source; never join two sources with one.
-- Read any name or number you quote from OCR against the page image; if the image does not settle it, say the source contains it and stop.
-- Read the column headings before you read a table row.
+- Read any name or number you quote from OCR against the page image, and the column headings before a table row; if the image does not settle it, say the source contains it and stop.
+- Quote a span long enough for the checker to find once; a single short token fails `snapcheck`, so take a longer span or leave the detail out.
 - Collapse whitespace in a quotation before it goes into a table cell; a newline silently breaks every row below it.
 - Quote JSON as its values joined by ellipses, never as key/value pairs; the checker reads a cell between quote marks.
 - Repair a wrong quotation against the capture its own citation names, one row at a time, never by string replace.
@@ -65,6 +65,6 @@ One sentence each. The incident behind a rule is in this file's git history.
 | `/dossiers/_runs.md` | an auditor | one entry per tick, appended forever |
 
 - The pickup note keeps five headings in order — `# Pickup note — <date>`, `## State`, `## Queue`, `## Needs a human`, `## Leads` — under 150 lines with at most fifteen numbered queue items; `notecheck` holds it there.
-- When a queue item closes, delete it; a lead goes to the leads file; per-tick detail goes to `_runs.md`; nothing else goes in the note.
+- A queue item is at most two sentences — what, where its list is, how to re-derive it. When it closes, delete it; a lead goes to the leads file; per-tick detail goes to `_runs.md`; a lesson goes to a rulebook by way of your handover; nothing else goes in the note.
 - When a fact in the note stops being true, replace the sentence; never append a section that takes an earlier one back.
 - A handover is written once; correct it in place if you must, never append a dated section.
