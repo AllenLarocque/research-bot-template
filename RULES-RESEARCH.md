@@ -63,6 +63,7 @@ One sentence each. The incident behind a rule is in this file's git history.
 | `/dossiers/_design/HANDOVER-<brief>.md` | whoever picks up the subject | what the brief found and decided, written once when it finishes |
 | `/dossiers/_design/LEADS.md` | a tick with an empty queue | sourced leads not yet written, appended |
 | `/dossiers/_runs.md` | an auditor | one entry per tick, appended forever |
+| `/dossiers/<Subject>/questions.md` | the next tick that works the subject | what its sources leave open, one question per line, each naming what would answer it; delete a line when it is answered |
 
 - The pickup note keeps five headings in order — `# Pickup note — <date>`, `## State`, `## Queue`, `## Needs a human`, `## Leads` — under 150 lines with at most fifteen numbered queue items; `notecheck` holds it there.
 - A queue item is at most two sentences — what, where its list is, how to re-derive it. When it closes, delete it; a lead goes to the leads file; per-tick detail goes to `_runs.md`; a lesson goes to a rulebook by way of your handover; nothing else goes in the note.
