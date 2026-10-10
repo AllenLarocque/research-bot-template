@@ -19,6 +19,13 @@ One sentence each. The incident behind a rule is in this file's git history.
 - Take a Wayback URL from the availability API's exact timestamp; a dated path can return the site's home page.
 - Copy a URL into a ledger row from the sidecar, never from memory or from another row's pattern.
 
+## When the operator supplies a document
+
+- A file under `/inbox/<subject>/` is a document the operator downloaded where you cannot reach (a captcha, a login); `/inbox/README.md` says how it is named, and `NOTES.txt` beside it may say more.
+- Capture it, do not fetch it: copy it into the subject's `snapshots/` and write a sidecar with `fetched_by: operator`, `fetched_at` the day you copy it, and as `url` the document's own address if NOTES.txt gives one, otherwise the publisher's search page for the filer.
+- Its Source page carries the publisher, the filer and the filing date from the file name, and no archived copy; the re-fetch rule above does not apply to it.
+- Record each file you take in `/dossiers/_inbox.md` (file, dossier copy, Source page, date); a file listed there is done, and you never re-download or replace it from elsewhere.
+
 ## When you quote
 
 - A quotation is copied from the capture, never reconstructed: extract the span by position, because retyping recapitalises, straightens apostrophes, drops markers, and passes every check.
