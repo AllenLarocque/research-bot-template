@@ -513,6 +513,28 @@ class TestQuotesContainingQuotes(unittest.TestCase):
         self.assertEqual(len(got), 1, got)
         self.assertIn("pull factor", got[0])
 
+    def test_a_short_curly_term_inside_a_straight_quote_does_not_drop_the_quote(self):
+        # Weyerhaeuser rows 549-554: the inner (“SEC”) is under the floor, so
+        # mark-to-mark matching found nothing and the whole row was skipped.
+        cell = ('"the board determined that each director is independent under NYSE and '
+                'Securities and Exchange Commission (“SEC”) rules and requirements"')
+        got = self.quotes(cell)
+        self.assertEqual(len(got), 1, got)
+        self.assertIn("“SEC”", got[0])
+        self.assertTrue(got[0].startswith("the board determined"), got)
+
+    def test_curly_inside_curly_is_one_quote(self):
+        got = self.quotes('“the board determined each director independent under '
+                          'Securities and Exchange Commission (“SEC”) rules”')
+        self.assertEqual(len(got), 1, got)
+        self.assertIn("“SEC”", got[0])
+        got = self.quotes('“the major “pull factor” was the promise of work”')
+        self.assertEqual(len(got), 1, got)
+
+    def test_two_curly_quotations_are_still_two(self):
+        self.assertEqual(self.quotes('“the camp opened in 1936” / “the river flows west”'),
+                         ["the camp opened in 1936", "the river flows west"])
+
     def test_two_separate_quotations_in_one_cell_are_still_two(self):
         got = self.quotes('"the camp opened in 1936" / "the river flows west"')
         self.assertEqual(got, ["the camp opened in 1936", "the river flows west"])

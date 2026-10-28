@@ -118,6 +118,16 @@ def _outer_pair_skipped(cell):
     inner = cell[1:-1]
     if cell[0] == '"':
         return "“" in inner or "”" in inner
+    if "“" in inner:
+        # Curly inside curly: nested only if the opening mark is not closed
+        # before the cell's last character. `“a” / “b”` closes at the first
+        # ” and holds two quotations; `“a (“b”) c”` holds one.
+        depth = 0
+        for ch in cell[:-1]:
+            depth += (ch == "“") - (ch == "”")
+            if depth == 0:
+                return False
+        return True
     return '"' in inner
 
 
@@ -153,7 +163,12 @@ def _quoted_spans(cell):
     """
     cell = cell.strip()
     parts = _QUOTED.findall(cell)
-    if parts and (any(p != p.strip() for p in parts) or _outer_pair_skipped(cell)):
+    # No parts at all is the same fallback: an inner term under the 10-character
+    # floor (“SEC”) leaves nothing for mark-to-mark matching to return, and the
+    # whole row used to vanish from the audit. A straight mark inside is an
+    # inch mark or a second quotation, so that path stays out of this one.
+    if (parts and (any(p != p.strip() for p in parts) or _outer_pair_skipped(cell))) \
+            or (not parts and _outer_pair_skipped(cell) and '"' not in cell[1:-1]):
         whole = _WHOLE_CELL_QUOTE.match(cell)
         if whole:
             return [whole.group(1)]
