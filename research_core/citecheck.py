@@ -143,21 +143,40 @@ def attribution(root):
     for entity, entity_dir, ledger in entities:
         domain_texts = domain_texts_by_entity[entity]
 
+        own_texts = texts_by_entity[entity]
         with open(ledger, encoding="utf-8", errors="ignore") as fh:
             for row in ledger_quotes(fh.read()):
-                holders = [(e, n) for e, texts in texts_by_entity.items()
-                           for n, t in texts.items()
-                           if verbatim(row["quote"], t)]
-                if not holders:
-                    continue          # quoteaudit's MISSING; not ours to judge
+                quote = row["quote"]
+
+                def held_anywhere():
+                    # Short-circuits on the first snapshot carrying the quote.
+                    return any(verbatim(quote, t)
+                               for texts in texts_by_entity.values()
+                               for t in texts.values())
+
+                # Look in the few snapshots that can decide the verdict
+                # before searching the whole corpus. Searching every
+                # snapshot for every row made the gate quadratic (rows x
+                # corpus text: 90+ minutes at 26,000 rows and 2.4 GB,
+                # 2026-11-09); the corpus-wide search now runs only to tell
+                # a finding from quoteaudit's MISSING, and the verdicts are
+                # the ones the full search gave.
                 cited = normalize_url(row["url"])
                 matches = corpus_index.get(cited, [])
                 if matches:
-                    hit = sorted(set(matches) & set(holders))
-                    verdict = "EXACT" if hit else "MISATTRIBUTED"
-                    snapshot = hit[0][1] if hit else sorted(matches)[0][1]
+                    hit = sorted(m for m in set(matches)
+                                 if verbatim(quote, texts_by_entity[m[0]].get(m[1], "")))
+                    if hit:
+                        verdict, snapshot = "EXACT", hit[0][1]
+                    elif held_anywhere():
+                        verdict, snapshot = "MISATTRIBUTED", sorted(matches)[0][1]
+                    else:
+                        continue      # quoteaudit's MISSING; not ours to judge
                 else:
-                    local_holders = [n for e, n in holders if e == entity]
+                    local_holders = [n for n, t in own_texts.items()
+                                     if verbatim(quote, t)]
+                    if not local_holders and not held_anywhere():
+                        continue      # quoteaudit's MISSING; not ours to judge
                     verdict, snapshot = _fallback(row, local_holders,
                                                    domain_texts)
                 rows.append({"entity": entity, "id": row["id"],
